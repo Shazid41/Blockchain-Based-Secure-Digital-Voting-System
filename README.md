@@ -43,20 +43,6 @@ The public interface is designed to feel like a government voting portal:
 | Results | Aggregate-only election results, charts, turnout, live public dashboard |
 | Fraud Monitoring | Fraud logs, risk filters, mark-resolved workflow |
 
-## Demo Admin Login
-
-Use the live website admin login page:
-
-```text
-Email: shazidsaharia21@gmail.com
-Password: Shazid@961
-```
-
-Admin route:
-
-```text
-/admin-login
-```
 
 ## Approved Demo NID Numbers
 
