@@ -60,7 +60,7 @@ language sql
 immutable
 set search_path = public
 as $$
-  select encode(digest(input, 'sha256'), 'hex');
+  select encode(extensions.digest(input, 'sha256'), 'hex');
 $$;
 
 create or replace function public.vote_data_hash(p_election_id uuid, p_ballot_id uuid, p_candidate_id uuid, p_anonymous_voter_hash text, p_cast_at timestamptz)

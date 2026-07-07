@@ -106,11 +106,12 @@ as $$
   );
 $$;
 
+drop policy if exists "Anyone can read regions" on public.regions;
 drop policy if exists "Authenticated users can read regions" on public.regions;
-create policy "Authenticated users can read regions"
+create policy "Anyone can read regions"
 on public.regions
 for select
-to authenticated
+to anon, authenticated
 using (true);
 
 drop policy if exists "Admins can manage regions" on public.regions;
@@ -149,5 +150,5 @@ using (public.is_admin())
 with check (public.is_admin());
 
 grant usage on schema public to anon, authenticated;
-grant select on public.regions to authenticated;
+grant select on public.regions to anon, authenticated;
 grant select, update on public.profiles to authenticated;
