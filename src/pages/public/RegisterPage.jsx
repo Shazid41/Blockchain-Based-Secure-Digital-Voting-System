@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AlertMessage from '../../components/common/AlertMessage.jsx';
 import FormInput from '../../components/common/FormInput.jsx';
@@ -8,16 +8,29 @@ import PrimaryButton from '../../components/common/PrimaryButton.jsx';
 import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import SelectInput from '../../components/common/SelectInput.jsx';
 import { registerVoter } from '../../services/authService.js';
-import { REGIONS } from '../../utils/constants.js';
+import { checkNidForSignup } from '../../services/nidService.js';
+import { listRegions } from '../../services/regionService.js';
 import { isStrongPassword, isValidEmail, isValidVoterNumber } from '../../utils/validation.js';
 
 const labels = ['Account', 'Voter Information', 'Review'];
+
+function friendlyRegisterError(error) {
+  const raw = String(error?.message || error || '');
+  const message = raw.toLowerCase();
+  if (message.includes('approved nid')) return 'This NID is not approved for registration. Please use one of the demo NID numbers or ask admin to add it.';
+  if (message.includes('already registered') || message.includes('duplicate') || message.includes('already been registered')) return 'This email or NID is already used.';
+  if (message.includes('invalid input syntax') && message.includes('uuid')) return 'Please select a valid region before submitting.';
+  if (message.includes('email')) return raw;
+  if (raw && raw !== '[object Object]' && raw !== '{}') return raw;
+  return 'Registration failed. Please check the information and try again.';
+}
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [regions, setRegions] = useState([]);
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -29,6 +42,21 @@ export default function RegisterPage() {
     regionId: '',
     terms: false,
   });
+
+  useEffect(() => {
+    let active = true;
+    listRegions()
+      .then((data) => {
+        if (active) setRegions(data);
+      })
+      .catch(() => {
+        if (active) setError('Could not load regions. Please refresh the page.');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const update = (field) => (event) => {
     const value = field === 'terms' ? event.target.checked : event.target.value;
@@ -53,11 +81,26 @@ export default function RegisterPage() {
     return errors;
   }, [form, step]);
 
-  function nextStep() {
+  async function nextStep() {
     setError('');
     if (Object.keys(currentErrors).length > 0) {
       setError('Please fix the highlighted fields before continuing.');
       return;
+    }
+    if (step === 1) {
+      try {
+        setLoading(true);
+        const allowed = await checkNidForSignup(form.voterNumber);
+        if (!allowed) {
+          setError('This NID is not in the approved demo list or it was already used.');
+          return;
+        }
+      } catch (nidError) {
+        setError(friendlyRegisterError(nidError));
+        return;
+      } finally {
+        setLoading(false);
+      }
     }
     setStep((value) => Math.min(value + 1, 2));
   }
@@ -74,7 +117,7 @@ export default function RegisterPage() {
       await registerVoter(form);
       navigate(`/verify-email?email=${encodeURIComponent(form.email)}`);
     } catch (registerError) {
-      setError(registerError.message.includes('duplicate') ? 'This email or voter number is already used.' : registerError.message);
+      setError(friendlyRegisterError(registerError));
     } finally {
       setLoading(false);
     }
@@ -108,7 +151,7 @@ export default function RegisterPage() {
               <FormInput id="voterNumber" label="Voter/NID number" value={form.voterNumber} onChange={update('voterNumber')} error={currentErrors.voterNumber} />
               <FormInput id="dateOfBirth" label="Date of birth" type="date" value={form.dateOfBirth} onChange={update('dateOfBirth')} error={currentErrors.dateOfBirth} />
               <FormInput id="phone" label="Phone number" value={form.phone} onChange={update('phone')} error={currentErrors.phone} />
-              <SelectInput id="region" label="Region" options={REGIONS} value={form.regionId} onChange={update('regionId')} error={currentErrors.regionId} />
+              <SelectInput id="region" label="Region" options={regions} value={form.regionId} onChange={update('regionId')} error={currentErrors.regionId} />
             </div>
           ) : null}
 
@@ -133,8 +176,8 @@ export default function RegisterPage() {
               Back
             </SecondaryButton>
             {step < 2 ? (
-              <PrimaryButton type="button" onClick={nextStep}>
-                Continue
+              <PrimaryButton type="button" disabled={loading} onClick={nextStep}>
+                {loading ? 'Checking...' : 'Continue'}
               </PrimaryButton>
             ) : (
               <PrimaryButton type="submit" disabled={loading}>

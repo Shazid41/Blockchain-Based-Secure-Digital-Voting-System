@@ -10,6 +10,7 @@ import BlockchainAuditPage from '../pages/admin/BlockchainAuditPage.jsx';
 import FraudAlertsPage from '../pages/admin/FraudAlertsPage.jsx';
 import ManageCandidatesPage from '../pages/admin/ManageCandidatesPage.jsx';
 import ManageElectionsPage from '../pages/admin/ManageElectionsPage.jsx';
+import ManageNidsPage from '../pages/admin/ManageNidsPage.jsx';
 import ManageRegionsPage from '../pages/admin/ManageRegionsPage.jsx';
 import ManageVotersPage from '../pages/admin/ManageVotersPage.jsx';
 import ResultsPage from '../pages/admin/ResultsPage.jsx';
@@ -37,45 +38,19 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<PublicLayout />}>
-        <Route index element={<LoginPage />} />
+        <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
+        <Route path="admin-login" element={<LoginPage adminMode />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route path="unauthorized" element={<UnauthorizedPage />} />
-        <Route
-          path="home"
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="about"
-          element={
-            <ProtectedRoute>
-              <AboutPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="how-it-works"
-          element={
-            <ProtectedRoute>
-              <HowItWorksPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="security"
-          element={
-            <ProtectedRoute>
-              <SecurityPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="verify" element={<VoteVerificationPage />} />
+        <Route path="home" element={<HomePage />} />
+        <Route path="about" element={<AboutPage />} />
+        <Route path="how-it-works" element={<HowItWorksPage />} />
+        <Route path="security" element={<SecurityPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
       <Route
@@ -111,6 +86,7 @@ export default function AppRoutes() {
         <Route path="elections" element={<ManageElectionsPage />} />
         <Route path="candidates" element={<ManageCandidatesPage />} />
         <Route path="regions" element={<ManageRegionsPage />} />
+        <Route path="nids" element={<ManageNidsPage />} />
         <Route path="results" element={<ResultsPage />} />
         <Route path="fraud-alerts" element={<FraudAlertsPage />} />
         <Route path="blockchain-audit" element={<BlockchainAuditPage />} />

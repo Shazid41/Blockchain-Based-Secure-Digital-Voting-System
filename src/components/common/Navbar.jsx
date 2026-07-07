@@ -10,7 +10,7 @@ const navItems = [
   { label: 'Elections', to: '/voter' },
   { label: 'How It Works', to: '/how-it-works' },
   { label: 'Security', to: '/security' },
-  { label: 'Vote Verification', to: '/verify-email' },
+  { label: 'Vote Verification', to: '/verify' },
   { label: 'Help', to: '/about' },
 ];
 
@@ -52,6 +52,9 @@ export default function Navbar() {
           >
             {isAuthenticated ? 'Profile' : 'Login'}
           </Link>
+          <Link className="focus-ring rounded px-3 py-2 text-sm font-semibold text-primary hover:bg-primary-light" to="/admin-login">
+            Admin
+          </Link>
         </div>
 
         <button
@@ -72,8 +75,11 @@ export default function Navbar() {
                 {item.label}
               </NavLink>
             ))}
-            <Link className="focus-ring rounded bg-primary px-4 py-3 text-center font-semibold text-white" to="/login">
-              Login
+            <Link className="focus-ring rounded bg-primary px-4 py-3 text-center font-semibold text-white" to="/login" onClick={() => setOpen(false)}>
+              Voter Login
+            </Link>
+            <Link className="focus-ring rounded border border-primary px-4 py-3 text-center font-semibold text-primary" to="/admin-login" onClick={() => setOpen(false)}>
+              Admin Login
             </Link>
           </div>
         </div>

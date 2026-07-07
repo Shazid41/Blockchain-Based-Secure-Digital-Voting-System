@@ -36,9 +36,18 @@ export async function loginWithPassword(email, password) {
   return data;
 }
 
+function appUrl(path) {
+  return new URL(path.replace(/^\//, ''), `${window.location.origin}${import.meta.env.BASE_URL}`).toString();
+}
+
 export async function loginWithOtp(email) {
   requireSupabase();
-  const { data, error } = await supabase.auth.signInWithOtp({ email });
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: appUrl('/voter'),
+    },
+  });
   if (error) throw error;
   return data;
 }
@@ -52,7 +61,7 @@ export async function logout() {
 export async function sendPasswordReset(email) {
   requireSupabase();
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`,
+    redirectTo: appUrl('/reset-password'),
   });
   if (error) throw error;
   return data;

@@ -6,8 +6,10 @@ import PageHeader from '../../components/common/PageHeader.jsx';
 import PasswordInput from '../../components/common/PasswordInput.jsx';
 import PrimaryButton from '../../components/common/PrimaryButton.jsx';
 import SecondaryButton from '../../components/common/SecondaryButton.jsx';
-import { loginWithOtp, loginWithPassword } from '../../services/authService.js';
+import { getProfile, loginWithPassword } from '../../services/authService.js';
 import { isValidEmail } from '../../utils/validation.js';
+
+const ADMIN_EMAIL = 'shazidsaharia21@gmail.com';
 
 function friendlyLoginError(error) {
   const message = String(error?.message ?? '').toLowerCase();
@@ -17,10 +19,10 @@ function friendlyLoginError(error) {
   return 'Network or authentication error. Please try again.';
 }
 
-export default function LoginPage() {
+export default function LoginPage({ adminMode = false }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ email: adminMode ? ADMIN_EMAIL : '', password: '' });
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(location.state?.notice ?? '');
   const [loading, setLoading] = useState(false);
@@ -41,8 +43,9 @@ export default function LoginPage() {
     }
     try {
       setLoading(true);
-      await loginWithPassword(form.email, form.password);
-      navigate('/voter');
+      const { user } = await loginWithPassword(form.email, form.password);
+      const profile = await getProfile(user.id);
+      navigate(profile?.role === 'admin' ? '/admin' : '/voter');
     } catch (authError) {
       setError(friendlyLoginError(authError));
     } finally {
@@ -50,26 +53,15 @@ export default function LoginPage() {
     }
   }
 
-  async function handleOtp() {
+  function useAdminEmail() {
     setError('');
-    if (!isValidEmail(form.email)) {
-      setError('Enter your email first to receive an OTP login link.');
-      return;
-    }
-    try {
-      setLoading(true);
-      await loginWithOtp(form.email);
-      setNotice('Email OTP link sent. Please check your inbox.');
-    } catch (authError) {
-      setError(friendlyLoginError(authError));
-    } finally {
-      setLoading(false);
-    }
+    setNotice('Admin email filled. Enter the admin password to continue.');
+    setForm((current) => ({ ...current, email: ADMIN_EMAIL }));
   }
 
   return (
     <>
-      <PageHeader title="Login or Register First" description="Everyone must sign in before entering the secure voting website. New voters should create an account first so their information can be stored in the database." />
+      <PageHeader title={adminMode ? 'Admin Login' : 'Voter Login'} description="Visitors can read the public project pages directly. Voters and admins must sign in for protected actions." />
       <section className="container-page py-10">
         <form className="card mx-auto max-w-xl space-y-5 p-6" onSubmit={handleSubmit}>
           {notice ? <AlertMessage type="success">{notice}</AlertMessage> : null}
@@ -87,9 +79,11 @@ export default function LoginPage() {
           <PrimaryButton type="submit" className="w-full" disabled={loading}>
             {loading ? 'Checking account...' : 'Login'}
           </PrimaryButton>
-          <SecondaryButton type="button" className="w-full" disabled={loading} onClick={handleOtp}>
-            Email OTP option
-          </SecondaryButton>
+          {!adminMode ? (
+            <SecondaryButton type="button" className="w-full" disabled={loading} onClick={useAdminEmail}>
+              Admin login option
+            </SecondaryButton>
+          ) : null}
           <AlertMessage type="info" title="Security message">
             Accounts waiting for approval or suspended by admin cannot vote even after login.
           </AlertMessage>

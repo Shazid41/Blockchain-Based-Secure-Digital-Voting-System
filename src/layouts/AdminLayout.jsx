@@ -9,6 +9,7 @@ const adminLinks = [
   ['Elections', '/admin/elections'],
   ['Candidates', '/admin/candidates'],
   ['Regions', '/admin/regions'],
+  ['NID List', '/admin/nids'],
   ['Results', '/admin/results'],
   ['Fraud Alerts', '/admin/fraud-alerts'],
   ['Blockchain Audit', '/admin/blockchain-audit'],
