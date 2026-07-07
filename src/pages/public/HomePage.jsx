@@ -53,6 +53,10 @@ export default function HomePage() {
     'Candidate E': t('candidateE'),
   };
   const localize = (value) => (language === 'bn' ? labelMap[value] ?? value : value);
+  const localizeTime = (value) => {
+    if (language !== 'bn' || !value) return value;
+    return String(value).replace(/(\d+)h/g, '$1 ঘণ্টা').replace(/(\d+)m/g, '$1 মিনিট').replace('Ended', 'শেষ');
+  };
   const localizedCandidates = (firstElection?.candidates ?? []).map((candidate) => ({
     ...candidate,
     localized_name: localize(candidate.candidate_name),
@@ -103,7 +107,7 @@ export default function HomePage() {
               </div>
               <div className="rounded-lg border border-white/70 bg-white/70 p-3">
                 <p className="text-xs font-semibold uppercase text-muted">{t('timeLeft')}</p>
-                <p className="mt-1 text-2xl font-extrabold text-text">{firstElection?.time_left ?? '--'}</p>
+                <p className="mt-1 text-2xl font-extrabold text-text">{localizeTime(firstElection?.time_left ?? '--')}</p>
               </div>
             </div>
             <div className="mt-5 h-64">
@@ -148,7 +152,7 @@ export default function HomePage() {
                 <div className="rounded-lg bg-white p-3">
                   <Timer size={18} className="text-primary" aria-hidden="true" />
                   <p className="mt-2 text-xs font-semibold uppercase text-muted">{t('timeLeft')}</p>
-                  <p className="font-bold text-text">{election.time_left}</p>
+                  <p className="font-bold text-text">{localizeTime(election.time_left)}</p>
                 </div>
                 <div className="rounded-lg bg-white p-3">
                   <Vote size={18} className="text-primary" aria-hidden="true" />
