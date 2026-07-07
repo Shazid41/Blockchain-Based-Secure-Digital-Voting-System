@@ -13,6 +13,7 @@ export async function registerVoter({ email, password, fullName, voterNumber, ph
     email,
     password,
     options: {
+      emailRedirectTo: appUrl('/verify-email'),
       data: {
         full_name: fullName,
         voter_number: voterNumber,
