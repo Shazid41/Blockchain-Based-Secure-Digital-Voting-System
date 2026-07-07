@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth.js';
 import useLanguage from '../../hooks/useLanguage.js';
-import { PROJECT } from '../../utils/constants.js';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 
 const navItems = [
@@ -33,8 +32,8 @@ export default function Navbar() {
             <ShieldCheck size={24} aria-hidden="true" />
           </span>
           <span>
-            <span className="block text-base font-bold leading-5 text-primary sm:text-lg">{PROJECT.shortName}</span>
-            <span className="hidden text-xs font-medium text-muted sm:block">{PROJECT.subtitle}</span>
+            <span className="block text-base font-bold leading-5 text-primary sm:text-lg">{t('siteName')}</span>
+            <span className="hidden text-xs font-medium text-muted sm:block">{t('siteSubtitle')}</span>
           </span>
         </Link>
 
@@ -52,7 +51,7 @@ export default function Navbar() {
             className="focus-ring inline-flex min-h-11 items-center justify-center rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
             to={isAuthenticated ? (profile?.role === 'admin' ? '/admin' : '/voter') : '/login'}
           >
-            {isAuthenticated ? 'Profile' : t('login')}
+            {isAuthenticated ? t('profile') : t('login')}
           </Link>
           <Link className="focus-ring rounded px-3 py-2 text-sm font-semibold text-primary hover:bg-primary-light" to="/admin-login">
             {t('adminLogin')}

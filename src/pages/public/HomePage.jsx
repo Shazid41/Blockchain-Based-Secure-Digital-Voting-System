@@ -6,22 +6,21 @@ import PageHeader from '../../components/common/PageHeader.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
 import useLanguage from '../../hooks/useLanguage.js';
 import { listPublicElectionDashboard } from '../../services/publicDashboardService.js';
-import { PROJECT } from '../../utils/constants.js';
 
 const featureKeys = [
-  ['Secure Registration', <LockKeyhole key="registration" className="text-primary" aria-hidden="true" />],
-  ['Email Verification', <MailCheck key="email" className="text-primary" aria-hidden="true" />],
-  ['Anonymous Voting', <Fingerprint key="anonymous" className="text-primary" aria-hidden="true" />],
-  ['One Voter, One Vote', <Vote key="vote" className="text-primary" aria-hidden="true" />],
-  ['Blockchain Verification', <ShieldCheck key="blockchain" className="text-primary" aria-hidden="true" />],
-  ['Real-Time Results', <BarChart3 key="results" className="text-primary" aria-hidden="true" />],
-  ['Fraud Detection', <CheckCircle2 key="fraud" className="text-primary" aria-hidden="true" />],
+  ['secureRegistration', <LockKeyhole key="registration" className="text-primary" aria-hidden="true" />],
+  ['emailVerification', <MailCheck key="email" className="text-primary" aria-hidden="true" />],
+  ['anonymousVoting', <Fingerprint key="anonymous" className="text-primary" aria-hidden="true" />],
+  ['oneVoterOneVote', <Vote key="vote" className="text-primary" aria-hidden="true" />],
+  ['blockchainVerification', <ShieldCheck key="blockchain" className="text-primary" aria-hidden="true" />],
+  ['realTimeResults', <BarChart3 key="results" className="text-primary" aria-hidden="true" />],
+  ['fraudDetection', <CheckCircle2 key="fraud" className="text-primary" aria-hidden="true" />],
 ];
 
-const steps = ['Register', 'Verify Email', 'Wait for Approval', 'Select Election', 'Cast Vote', 'Verify Receipt'];
+const stepKeys = ['processRegister', 'processVerify', 'processApproval', 'processElection', 'processVote', 'processReceipt'];
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [liveElections, setLiveElections] = useState([]);
 
   useEffect(() => {
@@ -42,6 +41,22 @@ export default function HomePage() {
   }, []);
 
   const firstElection = liveElections[0];
+  const labelMap = {
+    'Department Club Election': t('departmentClubElection'),
+    'Student Council Election 2026': t('studentCouncilElection'),
+    'Library Committee Poll': t('libraryCommitteePoll'),
+    'North Region': t('northRegion'),
+    'South Region': t('southRegion'),
+    'Central Region': t('centralRegion'),
+    'Candidate C': t('candidateC'),
+    'Candidate D': t('candidateD'),
+    'Candidate E': t('candidateE'),
+  };
+  const localize = (value) => (language === 'bn' ? labelMap[value] ?? value : value);
+  const localizedCandidates = (firstElection?.candidates ?? []).map((candidate) => ({
+    ...candidate,
+    localized_name: localize(candidate.candidate_name),
+  }));
 
   return (
     <>
@@ -49,7 +64,7 @@ export default function HomePage() {
         <div className="animated-grid absolute inset-0 opacity-80" aria-hidden="true" />
         <div className="container-page relative grid gap-8 py-14 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-primary">{PROJECT.university}</p>
+            <p className="text-sm font-bold uppercase tracking-wide text-primary">{t('portalEyebrow')}</p>
             <h1 className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight text-text sm:text-5xl">
               {t('projectTitle')}
             </h1>
@@ -73,7 +88,7 @@ export default function HomePage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-primary-dark">{t('liveElectionHub')}</p>
-                <h2 className="mt-2 text-2xl font-extrabold text-text">{firstElection?.title ?? 'Department Club Election'}</h2>
+                <h2 className="mt-2 text-2xl font-extrabold text-text">{localize(firstElection?.title ?? 'Department Club Election')}</h2>
               </div>
               <StatusBadge status={firstElection?.status ?? 'active'} />
             </div>
@@ -84,7 +99,7 @@ export default function HomePage() {
               </div>
               <div className="rounded-lg border border-white/70 bg-white/70 p-3">
                 <p className="text-xs font-semibold uppercase text-muted">{t('leading')}</p>
-                <p className="mt-1 truncate text-base font-extrabold text-primary">{firstElection?.leader_name ?? 'Waiting'}</p>
+                <p className="mt-1 truncate text-base font-extrabold text-primary">{localize(firstElection?.leader_name ?? 'Waiting')}</p>
               </div>
               <div className="rounded-lg border border-white/70 bg-white/70 p-3">
                 <p className="text-xs font-semibold uppercase text-muted">{t('timeLeft')}</p>
@@ -93,9 +108,9 @@ export default function HomePage() {
             </div>
             <div className="mt-5 h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={firstElection?.candidates ?? []}>
+                <BarChart data={localizedCandidates}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#D8E0DD" />
-                  <XAxis dataKey="candidate_name" tick={{ fontSize: 11 }} interval={0} height={52} />
+                  <XAxis dataKey="localized_name" tick={{ fontSize: 11 }} interval={0} height={52} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
                   <Bar dataKey="vote_count" fill="#006A4E" radius={[6, 6, 0, 0]} />
@@ -115,9 +130,9 @@ export default function HomePage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={election.status} />
-                    <span className="rounded bg-blue-50 px-3 py-1 text-xs font-bold uppercase text-info">{election.region_name}</span>
+                    <span className="rounded bg-blue-50 px-3 py-1 text-xs font-bold uppercase text-info">{localize(election.region_name)}</span>
                   </div>
-                  <h3 className="mt-3 text-xl font-extrabold text-text">{election.title}</h3>
+                  <h3 className="mt-3 text-xl font-extrabold text-text">{localize(election.title)}</h3>
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-semibold uppercase text-muted">{t('totalVotes')}</p>
@@ -128,7 +143,7 @@ export default function HomePage() {
                 <div className="rounded-lg bg-primary-light p-3">
                   <Trophy size={18} className="text-primary" aria-hidden="true" />
                   <p className="mt-2 text-xs font-semibold uppercase text-muted">{t('leading')}</p>
-                  <p className="font-bold text-text">{election.leader_name}</p>
+                  <p className="font-bold text-text">{localize(election.leader_name)}</p>
                 </div>
                 <div className="rounded-lg bg-white p-3">
                   <Timer size={18} className="text-primary" aria-hidden="true" />
@@ -138,15 +153,15 @@ export default function HomePage() {
                 <div className="rounded-lg bg-white p-3">
                   <Vote size={18} className="text-primary" aria-hidden="true" />
                   <p className="mt-2 text-xs font-semibold uppercase text-muted">{t('seat')}</p>
-                  <p className="font-bold text-text">{election.region_name}</p>
+                  <p className="font-bold text-text">{localize(election.region_name)}</p>
                 </div>
               </div>
               <div className="mt-5 space-y-3">
                 {election.candidates.map((candidate) => (
                   <div key={candidate.candidate_id}>
                     <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="font-semibold text-text">{candidate.candidate_name}</span>
-                      <span className="font-bold text-primary">{candidate.vote_count} votes</span>
+                      <span className="font-semibold text-text">{localize(candidate.candidate_name)}</span>
+                      <span className="font-bold text-primary">{candidate.vote_count} {t('votes')}</span>
                     </div>
                     <div className="mt-2 h-2 rounded-full bg-primary-light">
                       <div className="h-2 rounded-full bg-gradient-to-r from-primary to-[#20A06F]" style={{ width: `${candidate.percentage ?? 0}%` }} />
@@ -169,12 +184,12 @@ export default function HomePage() {
       <section className="container-page pb-12">
         <PageHeader title={t('coreFeatures')} description={t('coreFeaturesDescription')} />
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featureKeys.map(([label, icon]) => (
-            <article key={label} className="card group p-5">
+          {featureKeys.map(([key, icon]) => (
+            <article key={key} className="card group p-5">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-light transition group-hover:bg-primary group-hover:text-white">
                 {icon}
               </div>
-              <h3 className="mt-4 font-bold text-text">{label}</h3>
+              <h3 className="mt-4 font-bold text-text">{t(key)}</h3>
             </article>
           ))}
         </div>
@@ -184,12 +199,12 @@ export default function HomePage() {
         <div className="container-page">
           <h2 className="text-2xl font-bold text-text">{t('votingProcess')}</h2>
           <div className="mt-6 grid gap-3 md:grid-cols-3">
-            {steps.map((step, index) => (
+            {stepKeys.map((step, index) => (
               <div key={step} className="card flex items-center gap-4 p-4">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-[#20A06F] text-sm font-bold text-white">
                   {index + 1}
                 </span>
-                <span className="font-semibold text-text">{step}</span>
+                <span className="font-semibold text-text">{t(step)}</span>
               </div>
             ))}
           </div>
@@ -202,10 +217,8 @@ export default function HomePage() {
           <p className="mt-3 text-muted">{t('securityAssuranceText')}</p>
         </div>
         <div className="card p-6">
-          <h2 className="text-2xl font-bold text-text">{t('help')}</h2>
-          <p className="mt-3 text-muted">
-            New voters register with email, phone, and an approved 10 or 16 digit voter number. Admin approval is required before voting access is granted.
-          </p>
+          <h2 className="text-2xl font-bold text-text">{t('publicInfo')}</h2>
+          <p className="mt-3 text-muted">{t('publicInfoText')}</p>
         </div>
       </section>
     </>

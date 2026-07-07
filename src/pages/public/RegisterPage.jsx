@@ -77,9 +77,9 @@ export default function RegisterPage() {
       if (!form.phone.trim()) errors.phone = 'Phone number is required.';
       if (!form.regionId) errors.regionId = 'Select your region.';
     }
-    if (step === 2 && !form.terms) errors.terms = 'You must accept the academic project terms.';
+    if (step === 2 && !form.terms) errors.terms = t('termsRequired');
     return errors;
-  }, [form, step]);
+  }, [form, step, t]);
 
   async function nextStep() {
     setError('');
@@ -165,7 +165,7 @@ export default function RegisterPage() {
               </div>
               <label className="flex gap-3 text-sm text-muted">
                 <input type="checkbox" checked={form.terms} onChange={update('terms')} className="mt-1" />
-                I understand this account is for an academic project and voting access requires verification and admin approval.
+                {t('registrationConsent')}
               </label>
               {currentErrors.terms ? <p className="text-sm font-medium text-error">{currentErrors.terms}</p> : null}
             </div>

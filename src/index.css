@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'SolaimanLipi';
+  src: local('SolaimanLipi'), local('Solaiman Lipi');
+  font-display: swap;
+}
+
 :root {
   color: #121c2a;
   background: #f8f9ff;
@@ -22,6 +28,15 @@ body {
     radial-gradient(circle at 84% 0%, rgba(188, 0, 39, 0.12), transparent 22rem),
     linear-gradient(135deg, #f8f9ff 0%, #eff4ff 42%, #e6eeff 100%);
   overflow-x: hidden;
+}
+
+html[data-language='bn'],
+html[data-language='bn'] body,
+html[data-language='bn'] button,
+html[data-language='bn'] input,
+html[data-language='bn'] select,
+html[data-language='bn'] textarea {
+  font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', 'Noto Sans', system-ui, sans-serif;
 }
 
 body::before,

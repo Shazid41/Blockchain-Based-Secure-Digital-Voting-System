@@ -1,16 +1,17 @@
 import { Link } from 'react-router-dom';
-import { PROJECT } from '../../utils/constants.js';
-
-const columns = [
-  { title: 'About the Project', links: [['Overview', '/about'], ['How It Works', '/how-it-works']] },
-  { title: 'Quick Links', links: [['Home', '/'], ['Login', '/login'], ['Register', '/register']] },
-  { title: 'Help and Support', links: [['Security', '/security'], ['Accessibility', '/about']] },
-  { title: 'Security Information', links: [['Privacy', '/security'], ['Terms', '/about'], ['GitHub Repository', '#']] },
-];
+import useLanguage from '../../hooks/useLanguage.js';
 
 export default function Footer() {
+  const { t } = useLanguage();
+  const columns = [
+    { title: t('footerAbout'), links: [[t('overview'), '/about'], [t('howItWorks'), '/how-it-works']] },
+    { title: t('footerQuick'), links: [[t('home'), '/'], [t('login'), '/login'], [t('register'), '/register']] },
+    { title: t('footerHelp'), links: [[t('security'), '/security'], [t('accessibility'), '/about']] },
+    { title: t('footerSecurity'), links: [[t('privacy'), '/security'], [t('terms'), '/about'], [t('voteVerification'), '/verify']] },
+  ];
+
   return (
-    <footer className="border-t border-border bg-primary-dark text-white">
+    <footer className="border-t border-white/20 bg-gradient-to-br from-primary-dark via-[#053B31] to-[#121C2A] text-white">
       <div className="container-page grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
         {columns.map((column) => (
           <section key={column.title}>
@@ -28,9 +29,7 @@ export default function Footer() {
         ))}
       </div>
       <div className="border-t border-white/20">
-        <div className="container-page py-4 text-sm text-white/80">
-          This system is developed as an academic project for Web Engineering Lab. {PROJECT.university}.
-        </div>
+        <div className="container-page py-4 text-sm text-white/80">{t('footerNote')}</div>
       </div>
     </footer>
   );
