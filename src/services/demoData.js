@@ -33,6 +33,8 @@ export const demoCandidates = [
   { id: 'c1', election_id: 'e1', full_name: 'Candidate A', party_name: 'Green Group', symbol_url: '', biography: 'Focused on transparent student services.', region_id: demoRegions[2].id, is_active: true },
   { id: 'c2', election_id: 'e1', full_name: 'Candidate B', party_name: 'Unity Panel', symbol_url: '', biography: 'Working for inclusive campus activities.', region_id: demoRegions[2].id, is_active: true },
   { id: 'c3', election_id: 'e2', full_name: 'Candidate C', party_name: 'Innovation Forum', symbol_url: '', biography: 'Promotes digital student support.', region_id: demoRegions[0].id, is_active: true },
+  { id: 'c4', election_id: 'e2', full_name: 'Candidate D', party_name: 'Progress Panel', symbol_url: '', biography: 'Focused on fair student funding.', region_id: demoRegions[0].id, is_active: true },
+  { id: 'c5', election_id: 'e2', full_name: 'Candidate E', party_name: 'Digital Unity', symbol_url: '', biography: 'Improves club communication and events.', region_id: demoRegions[0].id, is_active: true },
 ];
 
 export const demoEligibility = [

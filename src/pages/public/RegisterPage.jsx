@@ -7,12 +7,11 @@ import PasswordInput from '../../components/common/PasswordInput.jsx';
 import PrimaryButton from '../../components/common/PrimaryButton.jsx';
 import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import SelectInput from '../../components/common/SelectInput.jsx';
+import useLanguage from '../../hooks/useLanguage.js';
 import { registerVoter } from '../../services/authService.js';
 import { checkNidForSignup } from '../../services/nidService.js';
 import { listRegions } from '../../services/regionService.js';
 import { isStrongPassword, isValidEmail, isValidVoterNumber } from '../../utils/validation.js';
-
-const labels = ['Account', 'Voter Information', 'Review'];
 
 function friendlyRegisterError(error) {
   const raw = String(error?.message || error || '');
@@ -27,6 +26,7 @@ function friendlyRegisterError(error) {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -125,11 +125,11 @@ export default function RegisterPage() {
 
   return (
     <>
-      <PageHeader title="Voter Registration" description="Create one secure voter account using email, phone, and a 10 or 16 digit voter/NID number." />
+      <PageHeader title={t('voterRegistration')} description={t('registrationDescription')} />
       <section className="container-page py-10">
         <form className="card mx-auto max-w-3xl space-y-6 p-6" onSubmit={submit}>
           <div className="grid gap-3 sm:grid-cols-3">
-            {labels.map((label, index) => (
+            {[t('account'), t('voterInformation'), t('review')].map((label, index) => (
               <div key={label} className={`rounded border p-3 text-sm font-semibold ${index === step ? 'border-primary bg-primary-light text-primary-dark' : 'border-border text-muted'}`}>
                 {index + 1}. {label}
               </div>
@@ -139,19 +139,19 @@ export default function RegisterPage() {
 
           {step === 0 ? (
             <div className="grid gap-5">
-              <FormInput id="fullName" label="Full name" value={form.fullName} onChange={update('fullName')} error={currentErrors.fullName} />
-              <FormInput id="registerEmail" label="Email" type="email" value={form.email} onChange={update('email')} error={currentErrors.email} />
-              <PasswordInput id="registerPassword" label="Password" value={form.password} onChange={update('password')} error={currentErrors.password} />
-              <PasswordInput id="confirmPassword" label="Confirm password" value={form.confirmPassword} onChange={update('confirmPassword')} error={currentErrors.confirmPassword} />
+              <FormInput id="fullName" label={t('fullName')} value={form.fullName} onChange={update('fullName')} error={currentErrors.fullName} />
+              <FormInput id="registerEmail" label={t('emailAddress')} type="email" value={form.email} onChange={update('email')} error={currentErrors.email} />
+              <PasswordInput id="registerPassword" label={t('password')} value={form.password} onChange={update('password')} error={currentErrors.password} />
+              <PasswordInput id="confirmPassword" label={t('confirmPassword')} value={form.confirmPassword} onChange={update('confirmPassword')} error={currentErrors.confirmPassword} />
             </div>
           ) : null}
 
           {step === 1 ? (
             <div className="grid gap-5 sm:grid-cols-2">
-              <FormInput id="voterNumber" label="Voter/NID number" value={form.voterNumber} onChange={update('voterNumber')} error={currentErrors.voterNumber} />
-              <FormInput id="dateOfBirth" label="Date of birth" type="date" value={form.dateOfBirth} onChange={update('dateOfBirth')} error={currentErrors.dateOfBirth} />
-              <FormInput id="phone" label="Phone number" value={form.phone} onChange={update('phone')} error={currentErrors.phone} />
-              <SelectInput id="region" label="Region" options={regions} value={form.regionId} onChange={update('regionId')} error={currentErrors.regionId} />
+              <FormInput id="voterNumber" label={t('voterNidNumber')} value={form.voterNumber} onChange={update('voterNumber')} error={currentErrors.voterNumber} />
+              <FormInput id="dateOfBirth" label={t('dateOfBirth')} type="date" value={form.dateOfBirth} onChange={update('dateOfBirth')} error={currentErrors.dateOfBirth} />
+              <FormInput id="phone" label={t('phoneNumber')} value={form.phone} onChange={update('phone')} error={currentErrors.phone} />
+              <SelectInput id="region" label={t('region')} options={regions} value={form.regionId} onChange={update('regionId')} error={currentErrors.regionId} />
             </div>
           ) : null}
 
@@ -173,15 +173,15 @@ export default function RegisterPage() {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
             <SecondaryButton type="button" disabled={step === 0 || loading} onClick={() => setStep((value) => value - 1)}>
-              Back
+              {t('back')}
             </SecondaryButton>
             {step < 2 ? (
               <PrimaryButton type="button" disabled={loading} onClick={nextStep}>
-                {loading ? 'Checking...' : 'Continue'}
+                {loading ? 'Checking...' : t('continue')}
               </PrimaryButton>
             ) : (
               <PrimaryButton type="submit" disabled={loading}>
-                {loading ? 'Creating account...' : 'Submit registration'}
+                {loading ? 'Creating account...' : t('submitRegistration')}
               </PrimaryButton>
             )}
           </div>

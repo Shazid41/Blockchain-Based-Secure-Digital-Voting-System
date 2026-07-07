@@ -5,8 +5,8 @@
 @tailwind utilities;
 
 :root {
-  color: #1F2937;
-  background: #F4F6F5;
+  color: #121c2a;
+  background: #f8f9ff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -17,7 +17,58 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #F4F6F5;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(131, 215, 180, 0.32), transparent 28rem),
+    radial-gradient(circle at 84% 0%, rgba(188, 0, 39, 0.12), transparent 22rem),
+    linear-gradient(135deg, #f8f9ff 0%, #eff4ff 42%, #e6eeff 100%);
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: auto;
+  z-index: -1;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 999px;
+  filter: blur(18px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+body::before {
+  top: 8rem;
+  left: -8rem;
+  background: radial-gradient(circle, rgba(0, 106, 78, 0.28), transparent 64%);
+  animation: float-bg 14s ease-in-out infinite;
+}
+
+body::after {
+  right: -10rem;
+  bottom: 8rem;
+  background: radial-gradient(circle, rgba(37, 99, 166, 0.18), transparent 66%);
+  animation: float-bg 17s ease-in-out infinite reverse;
+}
+
+@keyframes float-bg {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2rem, -1.5rem, 0) scale(1.08);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 button,
@@ -40,5 +91,23 @@ a {
 }
 
 .card {
-  @apply rounded border border-border bg-card shadow-none;
+  @apply rounded-lg border border-white/70 bg-white/85 shadow-soft backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:shadow-glow;
+}
+
+.glass-panel {
+  @apply border border-white/70 bg-white/75 shadow-soft backdrop-blur;
+}
+
+.animated-grid {
+  background-image:
+    linear-gradient(rgba(0, 106, 78, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 106, 78, 0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, black, transparent 80%);
+}
+
+.shimmer-line {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0));
+  background-size: 200% 100%;
+  animation: shimmer 4s infinite;
 }

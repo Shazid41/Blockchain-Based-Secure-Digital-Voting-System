@@ -1,6 +1,6 @@
 export default function PageHeader({ eyebrow, title, description, children }) {
   return (
-    <header className="border-b border-border bg-white">
+    <header className="border-b border-white/70 bg-white/45 backdrop-blur">
       <div className="container-page py-10">
         {eyebrow ? <p className="text-sm font-semibold uppercase tracking-wide text-primary">{eyebrow}</p> : null}
         <div className="mt-2 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

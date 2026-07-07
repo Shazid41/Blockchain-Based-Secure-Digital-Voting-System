@@ -6,7 +6,7 @@ export default function FormInput({ id, label, error, help, className = '', ...p
       </label>
       <input
         id={id}
-        className={`focus-ring min-h-12 w-full rounded border bg-white px-4 py-3 text-text outline-none transition ${
+        className={`focus-ring min-h-12 w-full rounded-lg border bg-white/90 px-4 py-3 text-text shadow-sm outline-none transition hover:shadow-soft ${
           error ? 'border-error' : 'border-border focus:border-primary'
         }`}
         aria-invalid={Boolean(error)}

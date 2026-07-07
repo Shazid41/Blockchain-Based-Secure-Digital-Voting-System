@@ -6,6 +6,7 @@ import PageHeader from '../../components/common/PageHeader.jsx';
 import PasswordInput from '../../components/common/PasswordInput.jsx';
 import PrimaryButton from '../../components/common/PrimaryButton.jsx';
 import SecondaryButton from '../../components/common/SecondaryButton.jsx';
+import useLanguage from '../../hooks/useLanguage.js';
 import { getProfile, loginWithPassword } from '../../services/authService.js';
 import { isValidEmail } from '../../utils/validation.js';
 
@@ -22,6 +23,7 @@ function friendlyLoginError(error) {
 export default function LoginPage({ adminMode = false }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const [form, setForm] = useState({ email: adminMode ? ADMIN_EMAIL : '', password: '' });
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(location.state?.notice ?? '');
@@ -61,31 +63,31 @@ export default function LoginPage({ adminMode = false }) {
 
   return (
     <>
-      <PageHeader title={adminMode ? 'Admin Login' : 'Voter Login'} description="Visitors can read the public project pages directly. Voters and admins must sign in for protected actions." />
+      <PageHeader title={adminMode ? t('adminLogin') : t('voterLogin')} description={t('visitorMessage')} />
       <section className="container-page py-10">
         <form className="card mx-auto max-w-xl space-y-5 p-6" onSubmit={handleSubmit}>
           {notice ? <AlertMessage type="success">{notice}</AlertMessage> : null}
           {error ? <AlertMessage type="error">{error}</AlertMessage> : null}
-          <FormInput id="email" label="Email address" type="email" value={form.email} onChange={update('email')} />
-          <PasswordInput id="password" label="Password" value={form.password} onChange={update('password')} />
+          <FormInput id="email" label={t('emailAddress')} type="email" value={form.email} onChange={update('email')} />
+          <PasswordInput id="password" label={t('password')} value={form.password} onChange={update('password')} />
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <Link className="focus-ring rounded font-semibold text-primary" to="/forgot-password">
-              Forgot password?
+              {t('forgotPassword')}
             </Link>
             <Link className="focus-ring rounded font-semibold text-primary" to="/register">
-              Create voter account
+              {t('createVoterAccount')}
             </Link>
           </div>
           <PrimaryButton type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Checking account...' : 'Login'}
+            {loading ? 'Checking account...' : t('login')}
           </PrimaryButton>
           {!adminMode ? (
             <SecondaryButton type="button" className="w-full" disabled={loading} onClick={useAdminEmail}>
-              Admin login option
+              {t('adminLoginOption')}
             </SecondaryButton>
           ) : null}
-          <AlertMessage type="info" title="Security message">
-            Accounts waiting for approval or suspended by admin cannot vote even after login.
+          <AlertMessage type="info" title={t('securityMessage')}>
+            {t('approvalWarning')}
           </AlertMessage>
         </form>
       </section>

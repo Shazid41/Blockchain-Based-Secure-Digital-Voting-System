@@ -2,7 +2,7 @@ export default function SecondaryButton({ children, className = '', type = 'butt
   return (
     <button
       type={type}
-      className={`focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded border border-primary bg-white px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      className={`focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-primary bg-white/85 px-5 py-3 text-sm font-bold text-primary shadow-sm transition hover:-translate-y-0.5 hover:bg-primary-light hover:shadow-soft disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
       {...props}
     >
       {children}
