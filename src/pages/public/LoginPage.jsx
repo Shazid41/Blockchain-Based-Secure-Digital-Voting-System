@@ -69,7 +69,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <PageHeader title="Login" description="Access your voter, admin, or auditor dashboard using verified credentials." />
+      <PageHeader title="Login or Register First" description="Everyone must sign in before entering the secure voting website. New voters should create an account first so their information can be stored in the database." />
       <section className="container-page py-10">
         <form className="card mx-auto max-w-xl space-y-5 p-6" onSubmit={handleSubmit}>
           {notice ? <AlertMessage type="success">{notice}</AlertMessage> : null}

@@ -37,16 +37,45 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<PublicLayout />}>
-        <Route index element={<HomePage />} />
-        <Route path="about" element={<AboutPage />} />
-        <Route path="how-it-works" element={<HowItWorksPage />} />
-        <Route path="security" element={<SecurityPage />} />
+        <Route index element={<LoginPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route path="unauthorized" element={<UnauthorizedPage />} />
+        <Route
+          path="home"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="about"
+          element={
+            <ProtectedRoute>
+              <AboutPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="how-it-works"
+          element={
+            <ProtectedRoute>
+              <HowItWorksPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="security"
+          element={
+            <ProtectedRoute>
+              <SecurityPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
       <Route
