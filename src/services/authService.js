@@ -1,9 +1,19 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
+const productionSiteUrl = 'https://shazid41.github.io/Blockchain-Based-Secure-Digital-Voting-System/';
+
 function requireSupabase() {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
   }
+}
+
+function publicSiteUrl() {
+  return import.meta.env.VITE_PUBLIC_SITE_URL || productionSiteUrl;
+}
+
+function appUrl(path) {
+  return new URL(path.replace(/^\//, ''), publicSiteUrl()).toString();
 }
 
 export async function registerVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId }) {
@@ -35,10 +45,6 @@ export async function loginWithPassword(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return data;
-}
-
-function appUrl(path) {
-  return new URL(path.replace(/^\//, ''), `${window.location.origin}${import.meta.env.BASE_URL}`).toString();
 }
 
 export async function loginWithOtp(email) {
