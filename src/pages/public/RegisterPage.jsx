@@ -8,7 +8,7 @@ import PrimaryButton from '../../components/common/PrimaryButton.jsx';
 import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import SelectInput from '../../components/common/SelectInput.jsx';
 import useLanguage from '../../hooks/useLanguage.js';
-import { registerVoter } from '../../services/authService.js';
+import { registerVoter, resendSignupVerification } from '../../services/authService.js';
 import { checkNidForSignup } from '../../services/nidService.js';
 import { listRegions } from '../../services/regionService.js';
 import { isStrongPassword, isValidEmail, isValidVoterNumber } from '../../utils/validation.js';
@@ -92,7 +92,9 @@ export default function RegisterPage() {
         setLoading(true);
         const allowed = await checkNidForSignup(form.voterNumber);
         if (!allowed) {
-          setError('This NID is not in the approved demo list or it was already used.');
+          setError(
+            'This NID is not in the approved demo list or it was already used. If you already submitted registration, open the verify email page and send a new verification email.',
+          );
           return;
         }
       } catch (nidError) {
@@ -115,9 +117,20 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       await registerVoter(form);
-      navigate(`/verify-email?email=${encodeURIComponent(form.email)}`);
+      let delivery = 'sent';
+      try {
+        await resendSignupVerification(form.email);
+      } catch {
+        delivery = 'check';
+      }
+      navigate(`/verify-email?email=${encodeURIComponent(form.email)}&delivery=${delivery}`);
     } catch (registerError) {
-      setError(friendlyRegisterError(registerError));
+      const message = friendlyRegisterError(registerError);
+      if (message.includes('already used') && isValidEmail(form.email)) {
+        navigate(`/verify-email?email=${encodeURIComponent(form.email)}&delivery=existing`);
+        return;
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }

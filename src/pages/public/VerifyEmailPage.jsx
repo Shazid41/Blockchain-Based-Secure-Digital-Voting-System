@@ -13,6 +13,7 @@ export default function VerifyEmailPage() {
   const [params] = useSearchParams();
   const { isAuthenticated, loading } = useAuth();
   const email = params.get('email') ?? '';
+  const delivery = params.get('delivery') ?? '';
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [resending, setResending] = useState(false);
@@ -21,6 +22,14 @@ export default function VerifyEmailPage() {
   const description = isAuthenticated
     ? 'Your email confirmation is complete. You can continue to your voter account.'
     : 'A verification link has been sent to your email address.';
+  const initialDeliveryNotice =
+    delivery === 'sent'
+      ? 'A fresh verification email has been requested. Use the newest email in your inbox.'
+      : delivery === 'existing'
+        ? 'This email may already have a pending account. Send a new verification email below.'
+        : delivery === 'check'
+          ? 'Registration was accepted. If the email is missing, send a new verification email below.'
+          : '';
 
   async function handleResend() {
     setNotice('');
@@ -60,6 +69,7 @@ export default function VerifyEmailPage() {
             <div className="mt-5 space-y-3 text-left">
               {notice ? <AlertMessage type="success">{notice}</AlertMessage> : null}
               {error ? <AlertMessage type="error">{error}</AlertMessage> : null}
+              {initialDeliveryNotice && !notice ? <AlertMessage type="info">{initialDeliveryNotice}</AlertMessage> : null}
               <AlertMessage type="warning" title="Important">
                 If an old email opens localhost or says OTP expired, ignore that email and use the newest verification
                 email after resending.
