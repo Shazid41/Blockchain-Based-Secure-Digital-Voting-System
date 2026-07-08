@@ -59,6 +59,19 @@ export async function loginWithOtp(email) {
   return data;
 }
 
+export async function resendSignupVerification(email) {
+  requireSupabase();
+  const { data, error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: {
+      emailRedirectTo: appUrl('/verify-email'),
+    },
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function logout() {
   requireSupabase();
   const { error } = await supabase.auth.signOut();
