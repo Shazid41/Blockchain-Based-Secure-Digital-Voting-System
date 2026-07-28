@@ -1,27 +1,45 @@
 import { CheckCircle2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AlertMessage from '../../components/common/AlertMessage.jsx';
 import ConfirmationModal from '../../components/common/ConfirmationModal.jsx';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import PrimaryButton from '../../components/common/PrimaryButton.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
-import { demoCandidates, demoEligibility, demoElections, regionName } from '../../services/demoData.js';
+import useAuth from '../../hooks/useAuth.js';
+import { listCandidates } from '../../services/candidateService.js';
+import { getElection } from '../../services/electionService.js';
+import { listEligibilityForVoter } from '../../services/eligibilityService.js';
 import { castSecureVote } from '../../services/votingService.js';
 
 export default function CastVotePage() {
   const { electionId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [election, setElection] = useState(null);
+  const [candidates, setCandidates] = useState([]);
+  const [eligibility, setEligibility] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const election = demoElections.find((item) => item.id === electionId);
-  const candidates = demoCandidates.filter((candidate) => candidate.election_id === electionId && candidate.is_active);
-  const eligibility = demoEligibility.find((item) => item.election_id === electionId);
+  const selectedCandidateName = useMemo(() => candidates.find((candidate) => candidate.id === selectedCandidate)?.full_name ?? 'No candidate selected yet.', [candidates, selectedCandidate]);
 
-  if (!election) return <PageHeader title="Election not found" description="The selected election does not exist." />;
+  useEffect(() => {
+    if (!user?.id) return;
+    Promise.all([getElection(electionId), listCandidates({ electionId }), listEligibilityForVoter(user.id)])
+      .then(([nextElection, nextCandidates, eligibilityRows]) => {
+        setElection(nextElection);
+        setCandidates(nextCandidates.filter((candidate) => candidate.is_active));
+        setEligibility(eligibilityRows.find((row) => row.election_id === electionId) ?? null);
+        setError('');
+      })
+      .catch((loadError) => setError(loadError.message));
+  }, [electionId, user?.id]);
+
+  if (!election && !error) return <PageHeader title="Loading election" description="Loading live election data." />;
+  if (!election) return <PageHeader title="Election not found" description="The selected election does not exist in the live database." />;
 
   async function submitVote() {
     setError('');
@@ -44,7 +62,7 @@ export default function CastVotePage() {
         {error ? <AlertMessage type="error">{error}</AlertMessage> : null}
         <div className="card grid gap-4 p-5 md:grid-cols-2">
           <p><strong>Schedule:</strong> {new Date(election.start_time).toLocaleString()} to {new Date(election.end_time).toLocaleString()}</p>
-          <p><strong>Region:</strong> {regionName(election.region_id)}</p>
+          <p><strong>Region:</strong> {election.regions?.name ?? 'All regions'}</p>
           <p><strong>Status:</strong> <StatusBadge status={election.status} /></p>
           <p><strong>Eligibility:</strong> {eligibility?.is_eligible ? 'Eligible' : 'Not eligible'}</p>
         </div>
@@ -71,7 +89,7 @@ export default function CastVotePage() {
         </div>
         <div className="card space-y-4 p-5">
           <h2 className="text-xl font-bold text-text">Selected Candidate Summary</h2>
-          <p className="text-muted">{demoCandidates.find((candidate) => candidate.id === selectedCandidate)?.full_name ?? 'No candidate selected yet.'}</p>
+          <p className="text-muted">{selectedCandidateName}</p>
           <label className="flex gap-3 text-sm text-muted">
             <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
             I understand that my vote cannot be changed after submission.

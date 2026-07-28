@@ -30,20 +30,20 @@ export default function AdminLayout() {
   }
 
   const navClass = ({ isActive }) =>
-    `focus-ring block rounded px-3 py-2 text-sm font-semibold ${isActive ? 'bg-primary text-white' : 'text-muted hover:bg-primary-light hover:text-primary'}`;
+    `focus-ring block rounded-lg px-3 py-2 text-sm font-bold transition ${isActive ? 'bg-gradient-to-r from-primary to-[#16834A] text-white shadow-soft' : 'text-muted hover:-translate-y-0.5 hover:bg-primary-light hover:text-primary'}`;
 
   const sidebar = (
-    <aside className="h-full border-r border-border bg-white p-4">
-      <div className="mb-6 flex items-center gap-2 font-bold text-primary"><ShieldCheck /> Admin Portal</div>
+    <aside className="h-full border-r border-white/70 bg-white/82 p-4 shadow-crisp backdrop-blur-xl">
+      <div className="mb-6 flex items-center gap-2 font-extrabold text-primary"><ShieldCheck /> Admin Portal</div>
       <nav className="space-y-1">{adminLinks.map(([label, to]) => <NavLink key={to} to={to} end={to === '/admin'} className={navClass}>{label}</NavLink>)}</nav>
     </aside>
   );
 
   return (
-    <div className="min-h-screen bg-page lg:grid lg:grid-cols-[260px_1fr]">
+    <div className="page-shell min-h-screen bg-page lg:grid lg:grid-cols-[260px_1fr]">
       <div className="hidden lg:block">{sidebar}</div>
       <div>
-        <header className="sticky top-0 z-30 border-b border-border bg-white">
+        <header className="sticky top-0 z-30 border-b border-white/70 bg-white/82 shadow-sm backdrop-blur-xl">
           <div className="flex min-h-16 items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Admin / {current}</p>
@@ -51,7 +51,7 @@ export default function AdminLayout() {
             </div>
             <div className="hidden items-center gap-3 lg:flex">
               <span className="text-sm font-semibold text-text">{profile?.full_name ?? 'Admin User'}</span>
-              <button className="focus-ring rounded p-2 text-muted hover:text-primary" onClick={handleLogout} aria-label="Logout"><LogOut size={18} /></button>
+              <button className="focus-ring rounded-lg p-2 text-muted transition hover:bg-primary-light hover:text-primary" onClick={handleLogout} aria-label="Logout"><LogOut size={18} /></button>
             </div>
             <button className="focus-ring rounded p-2 text-primary lg:hidden" onClick={() => setOpen((value) => !value)} aria-label="Open admin sidebar">
               {open ? <X /> : <Menu />}

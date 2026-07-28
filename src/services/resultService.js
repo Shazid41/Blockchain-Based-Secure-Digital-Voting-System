@@ -1,4 +1,4 @@
-import { demoBallots, demoCandidates, demoEligibility, demoElections, demoRegions } from './demoData.js';
+import { demoBallots, demoCandidates, demoEligibility } from './demoData.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 export async function getElectionResults(electionId) {
@@ -29,9 +29,5 @@ export async function getElectionResults(electionId) {
 }
 
 export function getRegionTurnout() {
-  return demoRegions.map((region) => ({
-    region: region.name,
-    eligible: demoEligibility.length,
-    voted: demoBallots.filter((ballot) => demoElections.find((election) => election.id === ballot.election_id)?.region_id === region.id).length,
-  }));
+  return [];
 }

@@ -3,7 +3,7 @@ import FormInput from '../../components/common/FormInput.jsx';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import SelectInput from '../../components/common/SelectInput.jsx';
-import { demoElections } from '../../services/demoData.js';
+import { listElections } from '../../services/electionService.js';
 import { listFraudLogs, markFraudResolved } from '../../services/fraudService.js';
 
 const riskStyles = {
@@ -15,9 +15,15 @@ const riskStyles = {
 
 export default function FraudAlertsPage() {
   const [logs, setLogs] = useState([]);
+  const [elections, setElections] = useState([]);
   const [filters, setFilters] = useState({ risk: '', election: '', date: '', resolved: '' });
   const [selected, setSelected] = useState(null);
-  useEffect(() => { listFraudLogs().then(setLogs); }, []);
+  useEffect(() => {
+    Promise.all([listFraudLogs(), listElections()]).then(([logRows, electionRows]) => {
+      setLogs(logRows);
+      setElections(electionRows);
+    });
+  }, []);
   const filtered = useMemo(() => logs.filter((log) => (!filters.risk || log.risk_level === filters.risk) && (!filters.election || log.election_id === filters.election) && (!filters.date || log.created_at.startsWith(filters.date)) && (!filters.resolved || String(log.resolved) === filters.resolved)), [filters, logs]);
 
   async function resolve(id) {
@@ -31,7 +37,7 @@ export default function FraudAlertsPage() {
       <section className="container-page space-y-5 py-8">
         <div className="card grid gap-4 p-5 lg:grid-cols-4">
           <SelectInput id="riskFilter" label="Risk level" value={filters.risk} onChange={(e) => setFilters({ ...filters, risk: e.target.value })} options={['low', 'medium', 'high', 'critical'].map((value) => ({ id: value, name: value }))} />
-          <SelectInput id="fraudElection" label="Election" value={filters.election} onChange={(e) => setFilters({ ...filters, election: e.target.value })} options={demoElections.map((election) => ({ id: election.id, name: election.title }))} />
+          <SelectInput id="fraudElection" label="Election" value={filters.election} onChange={(e) => setFilters({ ...filters, election: e.target.value })} options={elections.map((election) => ({ id: election.id, name: election.title }))} />
           <FormInput id="fraudDate" label="Date" type="date" value={filters.date} onChange={(e) => setFilters({ ...filters, date: e.target.value })} />
           <SelectInput id="resolvedFilter" label="Resolved" value={filters.resolved} onChange={(e) => setFilters({ ...filters, resolved: e.target.value })} options={[{ id: 'true', name: 'Resolved' }, { id: 'false', name: 'Open' }]} />
         </div>

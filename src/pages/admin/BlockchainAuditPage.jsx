@@ -1,5 +1,5 @@
 import { Copy, Download } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AlertMessage from '../../components/common/AlertMessage.jsx';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import PrimaryButton from '../../components/common/PrimaryButton.jsx';
@@ -7,16 +7,24 @@ import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import SelectInput from '../../components/common/SelectInput.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
 import { auditReportText, listVoteBlocks, verifyElectionChain } from '../../services/blockchainService.js';
-import { demoElections } from '../../services/demoData.js';
+import { listElections } from '../../services/electionService.js';
 
 function shortHash(hash = '') {
   return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
 }
 
 export default function BlockchainAuditPage() {
-  const [electionId, setElectionId] = useState('e2');
+  const [elections, setElections] = useState([]);
+  const [electionId, setElectionId] = useState('');
   const [result, setResult] = useState(null);
   const [blocks, setBlocks] = useState([]);
+
+  useEffect(() => {
+    listElections().then((data) => {
+      setElections(data);
+      setElectionId((current) => current || data[0]?.id || '');
+    });
+  }, []);
 
   async function runAudit() {
     const [auditResult, voteBlocks] = await Promise.all([verifyElectionChain(electionId), listVoteBlocks(electionId)]);
@@ -39,7 +47,7 @@ export default function BlockchainAuditPage() {
       <PageHeader eyebrow="Admin" title="Blockchain Audit" description="Verify the blockchain-inspired tamper-evident vote ledger for an election." />
       <section className="container-page space-y-6 py-8">
         <div className="card flex flex-col gap-4 p-5 md:flex-row md:items-end">
-          <SelectInput id="auditElection" label="Election" value={electionId} onChange={(e) => setElectionId(e.target.value)} options={demoElections.map((election) => ({ id: election.id, name: election.title }))} />
+          <SelectInput id="auditElection" label="Election" value={electionId} onChange={(e) => setElectionId(e.target.value)} options={elections.map((election) => ({ id: election.id, name: election.title }))} />
           <PrimaryButton onClick={runAudit}>Run Verification</PrimaryButton>
           <SecondaryButton onClick={exportReport} disabled={!result}><Download size={18} /> Export Audit Report</SecondaryButton>
         </div>

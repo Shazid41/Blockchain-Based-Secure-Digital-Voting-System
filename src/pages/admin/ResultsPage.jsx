@@ -3,15 +3,24 @@ import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveCo
 import PageHeader from '../../components/common/PageHeader.jsx';
 import SelectInput from '../../components/common/SelectInput.jsx';
 import SummaryCard from '../../components/common/SummaryCard.jsx';
-import { demoElections } from '../../services/demoData.js';
+import { listElections } from '../../services/electionService.js';
 import { getElectionResults, getRegionTurnout } from '../../services/resultService.js';
 
 const colors = ['#006A4E', '#2563A6', '#D58A00', '#F42A41'];
 
 export default function ResultsPage() {
-  const [electionId, setElectionId] = useState('e2');
+  const [elections, setElections] = useState([]);
+  const [electionId, setElectionId] = useState('');
   const [rows, setRows] = useState([]);
-  useEffect(() => { getElectionResults(electionId).then(setRows); }, [electionId]);
+  useEffect(() => {
+    listElections().then((data) => {
+      setElections(data);
+      setElectionId((current) => current || data[0]?.id || '');
+    });
+  }, []);
+  useEffect(() => {
+    if (electionId) getElectionResults(electionId).then(setRows);
+  }, [electionId]);
   const totalVotes = rows[0]?.total_votes ?? 0;
   const eligible = rows[0]?.total_eligible_voters ?? 0;
   const turnout = rows[0]?.turnout_percentage ?? 0;
@@ -23,7 +32,7 @@ export default function ResultsPage() {
       <PageHeader eyebrow="Admin" title="Results" description="Aggregate-only election results. Individual ballots are not exposed." />
       <section className="container-page space-y-6 py-8">
         <div className="card max-w-md p-5">
-          <SelectInput id="resultElection" label="Election" value={electionId} onChange={(e) => setElectionId(e.target.value)} options={demoElections.map((election) => ({ id: election.id, name: election.title }))} />
+          <SelectInput id="resultElection" label="Election" value={electionId} onChange={(e) => setElectionId(e.target.value)} options={elections.map((election) => ({ id: election.id, name: election.title }))} />
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <SummaryCard title="Total Votes" value={totalVotes} />

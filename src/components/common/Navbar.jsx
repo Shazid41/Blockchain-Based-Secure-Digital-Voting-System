@@ -20,15 +20,15 @@ export default function Navbar() {
   const { t } = useLanguage();
 
   const linkClass = ({ isActive }) =>
-    `focus-ring rounded px-2 py-2 text-sm font-semibold transition ${
-      isActive ? 'bg-primary-light text-primary-dark' : 'text-muted hover:text-primary'
+    `focus-ring nav-pill ${
+      isActive ? 'nav-pill-active bg-primary-light text-primary-dark shadow-sm' : 'text-muted hover:bg-white/70 hover:text-primary'
     }`;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/70 bg-white/75 shadow-sm backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-white/70 bg-white/82 shadow-crisp backdrop-blur-xl">
       <nav className="container-page flex min-h-20 items-center justify-between gap-4 py-3">
         <Link to="/" className="focus-ring flex items-center gap-3 rounded">
-          <span className="flex h-11 w-11 items-center justify-center rounded bg-primary text-white">
+          <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-[#16834A] text-white shadow-glow">
             <ShieldCheck size={24} aria-hidden="true" />
           </span>
           <span>
@@ -48,12 +48,12 @@ export default function Navbar() {
         <div className="hidden items-center gap-3 lg:flex">
           <LanguageSwitcher />
           <Link
-            className="focus-ring inline-flex min-h-11 items-center justify-center rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
+            className="focus-ring inline-flex min-h-11 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-[#16834A] px-4 py-2 text-sm font-bold text-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-glow"
             to={isAuthenticated ? (profile?.role === 'admin' ? '/admin' : '/voter') : '/login'}
           >
             {isAuthenticated ? t('profile') : t('login')}
           </Link>
-          <Link className="focus-ring rounded px-3 py-2 text-sm font-semibold text-primary hover:bg-primary-light" to="/admin-login">
+          <Link className="focus-ring rounded-lg px-3 py-2 text-sm font-bold text-primary transition hover:bg-primary-light hover:shadow-sm" to="/admin-login">
             {t('adminLogin')}
           </Link>
         </div>
