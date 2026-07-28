@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -203,7 +204,17 @@ function loginLocalAccount(email, password) {
 export async function registerVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId }) {
   if (isFirebaseConfigured) {
     const { user } = await withTimeout(createUserWithEmailAndPassword(firebaseAuth, email, password), 10000);
-    const profile = await upsertFirebaseProfile(user, { email, fullName, voterNumber, phone, dateOfBirth, regionId });
+    let profile;
+    try {
+      profile = await upsertFirebaseProfile(user, { email, fullName, voterNumber, phone, dateOfBirth, regionId });
+    } catch (error) {
+      try {
+        await deleteUser(user);
+      } catch {
+        // The auth account may already be out of scope; keep the original registration error.
+      }
+      throw error;
+    }
     try {
       await sendEmailVerification(user, { url: appUrl('/verify-email') });
     } catch {

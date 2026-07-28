@@ -4,7 +4,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  limit,
   orderBy,
   query,
   runTransaction,
@@ -182,9 +181,7 @@ export async function updateFirebaseApprovedNid(nid, updates) {
 export async function isFirebaseNidAvailable(nid) {
   requireFirebase();
   const allowed = fromDoc(await getDoc(doc(firebaseDb, 'approved_nids', nid)));
-  if (!allowed?.is_active) return false;
-  const profiles = await listCollection('profiles', [where('voter_number', '==', nid), limit(1)]);
-  return profiles.length === 0;
+  return Boolean(allowed?.is_active);
 }
 
 export async function listFirebaseVoters() {
