@@ -187,6 +187,19 @@ function createLocalVoter({ email, password, fullName, voterNumber, phone, dateO
   return saveLocalSession(profile);
 }
 
+function loginLocalAccount(email, password) {
+  if (email.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    return saveLocalSession(adminProfile());
+  }
+
+  const localAccount = findLocalAccount(email);
+  if (localAccount && localAccount.password === password) {
+    return saveLocalSession(localAccount.profile);
+  }
+
+  return null;
+}
+
 export async function registerVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId }) {
   if (isFirebaseConfigured) {
     const { user } = await withTimeout(createUserWithEmailAndPassword(firebaseAuth, email, password), 10000);
@@ -201,25 +214,32 @@ export async function registerVoter({ email, password, fullName, voterNumber, ph
 
   if (!isSupabaseConfigured) return createLocalVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId });
 
-  const { data, error } = await withTimeout(supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: appUrl('/verify-email'),
-      data: {
-        full_name: fullName,
-        voter_number: voterNumber,
-        phone,
-        date_of_birth: dateOfBirth,
-        region_id: regionId,
-        role: 'voter',
-        approval_status: 'pending',
+  try {
+    const { data, error } = await withTimeout(supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: appUrl('/verify-email'),
+        data: {
+          full_name: fullName,
+          voter_number: voterNumber,
+          phone,
+          date_of_birth: dateOfBirth,
+          region_id: regionId,
+          role: 'voter',
+          approval_status: 'pending',
+        },
       },
-    },
-  }));
+    }));
 
-  if (error) throw error;
-  return data;
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    if (isNetworkError(error)) {
+      return createLocalVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId });
+    }
+    throw error;
+  }
 }
 
 export async function loginWithPassword(email, password) {
@@ -242,14 +262,8 @@ export async function loginWithPassword(email, password) {
   }
 
   if (!isSupabaseConfigured) {
-    if (email.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      return saveLocalSession(adminProfile());
-    }
-
-    const localAccount = findLocalAccount(email);
-    if (localAccount && localAccount.password === password) {
-      return saveLocalSession(localAccount.profile);
-    }
+    const localSession = loginLocalAccount(email, password);
+    if (localSession) return localSession;
 
     throw new Error('Invalid email or password.');
   }
@@ -259,7 +273,11 @@ export async function loginWithPassword(email, password) {
     if (error) throw error;
     return data;
   } catch (error) {
-    if (isNetworkError(error)) throw new Error('Database connection problem. Please resume/check the Supabase project and try again.');
+    if (isNetworkError(error)) {
+      const localSession = loginLocalAccount(email, password);
+      if (localSession) return localSession;
+      throw new Error('Live backend is unavailable. Existing local accounts still work on this browser, or configure Firebase for permanent live login.');
+    }
     throw error;
   }
 }

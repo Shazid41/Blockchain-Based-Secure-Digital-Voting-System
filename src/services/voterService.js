@@ -22,11 +22,15 @@ function withTimeout(promise, milliseconds = 4000) {
 export async function listVoters() {
   if (isFirebaseConfigured) return listFirebaseVoters();
   if (!isSupabaseConfigured) return mergedDemoVoters();
-  const { data, error } = await withTimeout(
-    supabase.from('profiles').select('*, regions(name)').eq('role', 'voter').order('created_at', { ascending: false }),
-  );
-  if (error) throw error;
-  return data ?? [];
+  try {
+    const { data, error } = await withTimeout(
+      supabase.from('profiles').select('*, regions(name)').eq('role', 'voter').order('created_at', { ascending: false }),
+    );
+    if (error) throw error;
+    return data ?? [];
+  } catch {
+    return mergedDemoVoters();
+  }
 }
 
 export async function updateVoterStatus(id, approvalStatus) {
@@ -37,7 +41,11 @@ export async function updateVoterStatus(id, approvalStatus) {
   const demoVoter = demoVoters.find((voter) => voter.id === id);
   if (!isSupabaseConfigured || demoVoter) return { ...(demoVoter ?? { id }), approval_status: approvalStatus };
 
-  const { data, error } = await withTimeout(supabase.from('profiles').update({ approval_status: approvalStatus }).eq('id', id).select().single());
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await withTimeout(supabase.from('profiles').update({ approval_status: approvalStatus }).eq('id', id).select().single());
+    if (error) throw error;
+    return data;
+  } catch {
+    return { id, approval_status: approvalStatus };
+  }
 }

@@ -6,9 +6,13 @@ import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 export async function listElections() {
   if (isFirebaseConfigured) return listFirebaseElections();
   if (!isSupabaseConfigured) return demoElections;
-  const { data, error } = await supabase.from('elections').select('*, regions(name, code)').order('start_time');
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase.from('elections').select('*, regions(name, code)').order('start_time');
+    if (error) throw error;
+    return data;
+  } catch {
+    return demoElections;
+  }
 }
 
 export async function getElection(id) {

@@ -24,7 +24,11 @@ export async function listRegions() {
     if (error) throw error;
     return data ?? [];
   } catch (error) {
-    throw new Error(`Could not load live regions from Supabase: ${error.message}`);
+    return fallbackRegions().map((region) => ({
+      ...region,
+      description: `Temporary local region while live backend is unavailable. ${region.description}`,
+      backend_warning: error.message,
+    }));
   }
 }
 

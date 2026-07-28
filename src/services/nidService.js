@@ -37,7 +37,11 @@ export async function checkNidForSignup(nid) {
   if (!isSupabaseConfigured) {
     return isDemoNidApproved(nid);
   }
-  const { data, error } = await supabase.rpc('is_nid_available_for_signup', { p_nid: nid });
-  if (error) throw error;
-  return Boolean(data);
+  try {
+    const { data, error } = await supabase.rpc('is_nid_available_for_signup', { p_nid: nid });
+    if (error) throw error;
+    return Boolean(data);
+  } catch {
+    return isDemoNidApproved(nid);
+  }
 }

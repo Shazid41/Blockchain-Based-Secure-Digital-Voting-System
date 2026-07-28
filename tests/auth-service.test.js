@@ -6,13 +6,14 @@ describe('live Supabase auth mode', () => {
     localStorage.clear();
   });
 
-  it('does not create a local admin session when Supabase is configured but unreachable', async () => {
-    await expect(loginWithPassword('shazidsaharia21@gmail.com', 'Shazid@961')).rejects.toThrow(/Database connection problem|fetch failed|Request timeout/i);
-    expect(getLocalAuthState().session).toBeNull();
+  it('keeps admin access available when Supabase is configured but unreachable', async () => {
+    const result = await loginWithPassword('shazidsaharia21@gmail.com', 'Shazid@961');
+    expect(result.profile.role).toBe('admin');
+    expect(getLocalAuthState().session?.user?.email).toBe('shazidsaharia21@gmail.com');
   }, 8000);
 
-  it('does not create a local voter when live Supabase registration is unavailable', async () => {
-    await expect(registerVoter({
+  it('keeps voter registration available when live Supabase registration is unavailable', async () => {
+    const result = await registerVoter({
       email: 'local-voter@example.com',
       password: 'Testpass123',
       fullName: 'Local Voter',
@@ -20,7 +21,8 @@ describe('live Supabase auth mode', () => {
       phone: '01700000001',
       dateOfBirth: '2000-01-01',
       regionId: '',
-    })).rejects.toThrow(/fetch failed|Request timeout/i);
-    expect(getLocalAuthState().session).toBeNull();
+    });
+    expect(result.profile.email).toBe('local-voter@example.com');
+    expect(getLocalAuthState().session?.user?.email).toBe('local-voter@example.com');
   }, 8000);
 });

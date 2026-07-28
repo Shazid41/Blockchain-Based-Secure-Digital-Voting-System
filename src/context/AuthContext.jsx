@@ -61,8 +61,8 @@ export function AuthProvider({ children }) {
         data = response.data;
       } catch {
         if (!active) return;
-        setSession(null);
-        setProfile(null);
+        setSession(localState.session);
+        setProfile(localState.profile);
         setLoading(false);
         return;
       }

@@ -17,7 +17,8 @@ function friendlyLoginError(error) {
   const message = String(error?.message ?? '').toLowerCase();
   if (message.includes('email not confirmed')) return 'Please verify your email before logging in.';
   if (message.includes('invalid')) return 'Invalid email or password.';
-  if (message.includes('database connection') || message.includes('failed to fetch') || message.includes('request timeout')) return 'Live database is not reachable. Check the configured live backend, then try again.';
+  if (message.includes('live backend is unavailable')) return error.message;
+  if (message.includes('database connection') || message.includes('failed to fetch') || message.includes('request timeout')) return 'Live database is not reachable. Firebase config is needed for permanent live login.';
   if (message.includes('supabase is not configured')) return error.message;
   if (message.includes('firebase')) return error.message;
   return 'Network or authentication error. Please try again.';
@@ -72,7 +73,7 @@ export default function LoginPage({ adminMode = false }) {
           <div className="shimmer-line absolute inset-x-0 top-0 h-1" aria-hidden="true" />
           <div className="rounded-lg border border-primary/15 bg-gradient-to-r from-primary-light to-white p-4">
             <p className="text-sm font-extrabold uppercase tracking-wide text-primary">{adminMode ? 'Administrator access' : 'Verified voter access'}</p>
-            <p className="mt-1 text-sm text-muted">Live authentication is connected to {backendName}. Database must be active for login.</p>
+            <p className="mt-1 text-sm text-muted">Authentication prefers {backendName}. If the live backend is down, this browser can still use local project accounts.</p>
           </div>
           {notice ? <AlertMessage type="success">{notice}</AlertMessage> : null}
           {error ? <AlertMessage type="error">{error}</AlertMessage> : null}

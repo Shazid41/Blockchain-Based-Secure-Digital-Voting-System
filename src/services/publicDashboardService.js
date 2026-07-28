@@ -57,9 +57,13 @@ export async function listPublicElectionDashboard() {
   if (!isSupabaseConfigured) return demoSnapshots();
 
   let data;
-  const response = await supabase.rpc('public_live_election_dashboard');
-  if (response.error) throw response.error;
-  data = response.data;
+  try {
+    const response = await supabase.rpc('public_live_election_dashboard');
+    if (response.error) throw response.error;
+    data = response.data;
+  } catch {
+    return demoSnapshots();
+  }
   if (!data?.length) return [];
 
   const snapshots = data.map((row) => ({

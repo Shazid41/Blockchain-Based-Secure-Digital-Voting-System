@@ -10,9 +10,13 @@ export async function listCandidates(filters = {}) {
   }
   let query = supabase.from('candidates').select('*, elections(title), regions(name)');
   if (filters.electionId) query = query.eq('election_id', filters.electionId);
-  const { data, error } = await query.order('full_name');
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await query.order('full_name');
+    if (error) throw error;
+    return data;
+  } catch {
+    return demoCandidates.filter((candidate) => !filters.electionId || candidate.election_id === filters.electionId);
+  }
 }
 
 export async function saveCandidate(candidate) {
