@@ -9,7 +9,7 @@ import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import SelectInput from '../../components/common/SelectInput.jsx';
 import useLanguage from '../../hooks/useLanguage.js';
 import { registerVoter, resendSignupVerification } from '../../services/authService.js';
-import { checkNidForSignup } from '../../services/nidService.js';
+import { demoApprovedNids } from '../../services/nidService.js';
 import { listRegions } from '../../services/regionService.js';
 import { isStrongPassword, isValidEmail, isValidVoterNumber } from '../../utils/validation.js';
 
@@ -18,6 +18,7 @@ function friendlyRegisterError(error) {
   const message = raw.toLowerCase();
   if (message.includes('approved nid')) return 'This NID is not approved for registration. Please use one of the demo NID numbers or ask admin to add it.';
   if (message.includes('already registered') || message.includes('duplicate') || message.includes('already been registered')) return 'This email or NID is already used.';
+  if (message.includes('failed to fetch') || message.includes('network') || message.includes('timeout')) return 'Connection problem. Please try again in a moment. Your form information is still here.';
   if (message.includes('invalid input syntax') && message.includes('uuid')) return 'Please select a valid region before submitting.';
   if (message.includes('email')) return raw;
   if (raw && raw !== '[object Object]' && raw !== '{}') return raw;
@@ -40,7 +41,7 @@ export default function RegisterPage() {
     dateOfBirth: '',
     phone: '',
     regionId: '',
-    terms: false,
+    terms: true,
   });
 
   useEffect(() => {
@@ -50,13 +51,19 @@ export default function RegisterPage() {
         if (active) setRegions(data);
       })
       .catch(() => {
-        if (active) setError('Could not load regions. Please refresh the page.');
+        if (active) setRegions([]);
       });
 
     return () => {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!form.regionId && regions.length > 0) {
+      setForm((current) => ({ ...current, regionId: current.regionId || regions[0].id }));
+    }
+  }, [form.regionId, regions]);
 
   const update = (field) => (event) => {
     const value = field === 'terms' ? event.target.checked : event.target.value;
@@ -88,20 +95,10 @@ export default function RegisterPage() {
       return;
     }
     if (step === 1) {
-      try {
-        setLoading(true);
-        const allowed = await checkNidForSignup(form.voterNumber);
-        if (!allowed) {
-          setError(
-            'This NID is not in the approved demo list or it was already used. If you already submitted registration, open the verify email page and send a new verification email.',
-          );
-          return;
-        }
-      } catch (nidError) {
-        setError(friendlyRegisterError(nidError));
+      const locallyApproved = demoApprovedNids.some((row) => row.nid === form.voterNumber && row.is_active);
+      if (!locallyApproved) {
+        setError('Use one of the approved demo NID numbers. Admin can add more NIDs from the admin panel.');
         return;
-      } finally {
-        setLoading(false);
       }
     }
     setStep((value) => Math.min(value + 1, 2));
