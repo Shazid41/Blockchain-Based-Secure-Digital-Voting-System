@@ -8,7 +8,7 @@ import PrimaryButton from '../../components/common/PrimaryButton.jsx';
 import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import SelectInput from '../../components/common/SelectInput.jsx';
 import useLanguage from '../../hooks/useLanguage.js';
-import { registerVoter, resendSignupVerification } from '../../services/authService.js';
+import { registerVoter } from '../../services/authService.js';
 import { checkNidForSignup } from '../../services/nidService.js';
 import { listRegions } from '../../services/regionService.js';
 import { isStrongPassword, isValidEmail, isValidVoterNumber } from '../../utils/validation.js';
@@ -128,17 +128,19 @@ export default function RegisterPage() {
         navigate('/voter');
         return;
       }
-      let delivery = 'sent';
-      try {
-        await resendSignupVerification(form.email);
-      } catch {
-        delivery = 'check';
+      if (registration?.firebase) {
+        navigate('/voter', {
+          state: {
+            notice: 'Registration successful. Your voter account is pending admin approval.',
+          },
+        });
+        return;
       }
-      navigate(`/verify-email?email=${encodeURIComponent(form.email)}&delivery=${delivery}`);
+      navigate('/voter');
     } catch (registerError) {
       const message = friendlyRegisterError(registerError);
       if (message.includes('already used') && isValidEmail(form.email)) {
-        navigate(`/verify-email?email=${encodeURIComponent(form.email)}&delivery=existing`);
+        navigate('/login', { state: { notice: 'This email already has an account. Please login instead.' } });
         return;
       }
       setError(message);

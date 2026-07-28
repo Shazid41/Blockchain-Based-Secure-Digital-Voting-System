@@ -73,7 +73,7 @@ export default function LoginPage({ adminMode = false }) {
           <div className="shimmer-line absolute inset-x-0 top-0 h-1" aria-hidden="true" />
           <div className="rounded-lg border border-primary/15 bg-gradient-to-r from-primary-light to-white p-4">
             <p className="text-sm font-extrabold uppercase tracking-wide text-primary">{adminMode ? 'Administrator access' : 'Verified voter access'}</p>
-            <p className="mt-1 text-sm text-muted">Authentication prefers {backendName}. If the live backend is down, this browser can still use local project accounts.</p>
+            <p className="mt-1 text-sm text-muted">Live authentication is connected to {backendName}. Voter accounts are stored in the live database and reviewed by admin.</p>
           </div>
           {notice ? <AlertMessage type="success">{notice}</AlertMessage> : null}
           {error ? <AlertMessage type="error">{error}</AlertMessage> : null}

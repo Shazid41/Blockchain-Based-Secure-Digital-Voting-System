@@ -54,10 +54,54 @@ export async function ensureFirebaseSeed() {
     { id: 'south', name: 'South Region', code: 'SOUTH', description: 'Southern voting region.' },
     { id: 'central', name: 'Central Region', code: 'CENTRAL', description: 'Central voting region.' },
   ];
+  const defaultElection = {
+    id: 'e-live-1',
+    title: 'National Digital Election 2026',
+    description: 'Live secure digital voting election.',
+    start_time: '2026-07-29T00:00:00.000Z',
+    end_time: '2026-08-15T18:00:00.000Z',
+    status: 'active',
+    region_id: 'north',
+    result_visibility: 'live',
+  };
+  const defaultCandidates = [
+    {
+      id: 'c-live-1',
+      election_id: defaultElection.id,
+      full_name: 'Ayesha Rahman',
+      party_name: 'Progress Alliance',
+      biography: 'Focused on transparent digital governance.',
+      region_id: 'north',
+      symbol_url: '',
+      is_active: true,
+    },
+    {
+      id: 'c-live-2',
+      election_id: defaultElection.id,
+      full_name: 'Rafiq Hasan',
+      party_name: 'Citizen Unity',
+      biography: 'Focused on public access and accountability.',
+      region_id: 'north',
+      symbol_url: '',
+      is_active: true,
+    },
+    {
+      id: 'c-live-3',
+      election_id: defaultElection.id,
+      full_name: 'Nusrat Karim',
+      party_name: 'Digital Reform',
+      biography: 'Focused on secure civic technology.',
+      region_id: 'north',
+      symbol_url: '',
+      is_active: true,
+    },
+  ];
 
   await Promise.all([
     ...defaultRegions.map((region) => setDoc(doc(firebaseDb, 'regions', region.id), { ...region, created_at: serverTimestamp() }, { merge: true })),
     ...demoApprovedNids.map((row) => setDoc(doc(firebaseDb, 'approved_nids', row.nid), { ...row, created_at: serverTimestamp() }, { merge: true })),
+    setDoc(doc(firebaseDb, 'elections', defaultElection.id), { ...defaultElection, created_at: serverTimestamp(), updated_at: serverTimestamp() }, { merge: true }),
+    ...defaultCandidates.map((candidate) => setDoc(doc(firebaseDb, 'candidates', candidate.id), { ...candidate, created_at: serverTimestamp(), updated_at: serverTimestamp() }, { merge: true })),
   ]);
 }
 
