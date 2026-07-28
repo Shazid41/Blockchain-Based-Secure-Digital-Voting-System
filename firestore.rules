@@ -1,0 +1,92 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return signedIn() && profile().role == 'admin';
+    }
+
+    function isFirstAdminProfile(uid) {
+      return signedIn()
+        && request.auth.uid == uid
+        && request.auth.token.email == 'shazidsaharia21@gmail.com'
+        && request.resource.data.role == 'admin';
+    }
+
+    match /profiles/{uid} {
+      allow create: if (signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.role == 'voter'
+          && request.resource.data.approval_status == 'pending')
+        || isFirstAdminProfile(uid);
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow update: if isAdmin()
+        || (signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.approval_status == resource.data.approval_status
+          && request.resource.data.voter_number == resource.data.voter_number
+          && request.resource.data.email == resource.data.email);
+      allow delete: if isAdmin();
+    }
+
+    match /regions/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /approved_nids/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /elections/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /candidates/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /voter_eligibility/{id} {
+      allow read: if signedIn() && (resource.data.voter_id == request.auth.uid || isAdmin());
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.voter_id == request.auth.uid
+          && request.resource.data.voter_id == resource.data.voter_id
+          && request.resource.data.election_id == resource.data.election_id);
+      allow delete: if isAdmin();
+    }
+
+    match /ballots/{id} {
+      allow read: if isAdmin();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    match /vote_blocks/{id} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    match /fraud_logs/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /audit_logs/{id} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
