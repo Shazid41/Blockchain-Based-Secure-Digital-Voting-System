@@ -24,9 +24,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 12% 8%, rgba(131, 215, 180, 0.32), transparent 28rem),
-    radial-gradient(circle at 84% 0%, rgba(188, 0, 39, 0.12), transparent 22rem),
-    linear-gradient(135deg, #f8f9ff 0%, #eff4ff 42%, #e6eeff 100%);
+    linear-gradient(120deg, rgba(0, 106, 78, 0.11), transparent 23rem),
+    linear-gradient(245deg, rgba(37, 99, 166, 0.13), transparent 24rem),
+    linear-gradient(135deg, #f7fbff 0%, #edf7f5 36%, #eef3ff 69%, #fff7fb 100%);
   overflow-x: hidden;
 }
 
@@ -101,6 +101,35 @@ body::after {
   }
 }
 
+@keyframes mesh-drift {
+  0% {
+    background-position: 0 0, 0 0, 0 0;
+  }
+  100% {
+    background-position: 96px 54px, -72px 80px, 0 0;
+  }
+}
+
+@keyframes ribbon-flow {
+  0%,
+  100% {
+    transform: translate3d(-1rem, 0, 0) rotate(-8deg);
+  }
+  50% {
+    transform: translate3d(1.5rem, -0.75rem, 0) rotate(-5deg);
+  }
+}
+
+@keyframes float-card {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 button,
 input,
 select,
@@ -121,7 +150,7 @@ a {
 }
 
 .card {
-  @apply rounded-lg border border-white/75 bg-white/90 shadow-soft backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-glow;
+  @apply rounded-lg border border-white/75 bg-white/90 shadow-soft backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow;
   animation: rise-in 0.55s ease both;
 }
 
@@ -132,10 +161,12 @@ a {
 
 .animated-grid {
   background-image:
-    linear-gradient(rgba(0, 106, 78, 0.075) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37, 99, 166, 0.06) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: linear-gradient(to bottom, black, transparent 80%);
+    linear-gradient(rgba(0, 106, 78, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 166, 0.065) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.6), transparent 42%, rgba(0, 106, 78, 0.08));
+  background-size: 48px 48px, 48px 48px, 100% 100%;
+  animation: mesh-drift 22s linear infinite;
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
 }
 
 .shimmer-line {
@@ -183,6 +214,63 @@ a {
     linear-gradient(90deg, rgba(255, 255, 255, 0.42), transparent 18%, transparent 82%, rgba(255, 255, 255, 0.45)),
     radial-gradient(circle at 48% -10%, rgba(0, 106, 78, 0.08), transparent 30rem);
   pointer-events: none;
+}
+
+.hero-stage {
+  @apply relative overflow-hidden border-b border-white/70;
+  background:
+    linear-gradient(112deg, rgba(0, 106, 78, 0.16), transparent 28%),
+    linear-gradient(252deg, rgba(37, 99, 166, 0.14), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(242, 248, 255, 0.45));
+}
+
+.hero-stage::before,
+.hero-stage::after {
+  content: '';
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  height: 11rem;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  background: linear-gradient(90deg, rgba(0, 106, 78, 0.16), rgba(37, 99, 166, 0.09), rgba(244, 42, 65, 0.08));
+  filter: blur(0.2px);
+  opacity: 0.7;
+  pointer-events: none;
+  animation: ribbon-flow 16s ease-in-out infinite;
+}
+
+.hero-stage::before {
+  top: 4rem;
+  transform: rotate(-8deg);
+}
+
+.hero-stage::after {
+  bottom: 3rem;
+  transform: rotate(7deg);
+  animation-duration: 20s;
+  animation-direction: reverse;
+}
+
+.hero-copy {
+  animation: rise-in 0.7s ease both;
+}
+
+.live-monitor {
+  @apply relative rounded-lg border border-white/80 bg-white/80 p-5 shadow-glow backdrop-blur-xl;
+  animation: float-card 6s ease-in-out infinite;
+}
+
+.metric-tile {
+  @apply rounded-lg border border-white/75 bg-white/75 p-3 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-soft;
+}
+
+.chart-empty {
+  background:
+    linear-gradient(90deg, transparent, rgba(0, 106, 78, 0.08), transparent),
+    repeating-linear-gradient(135deg, rgba(0, 106, 78, 0.08) 0 1px, transparent 1px 12px),
+    rgba(255, 255, 255, 0.58);
+  background-size: 220% 100%, auto, auto;
+  animation: shimmer 5s ease-in-out infinite;
 }
 
 .interactive-row {

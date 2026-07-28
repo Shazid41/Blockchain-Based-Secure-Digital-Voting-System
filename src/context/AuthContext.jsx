@@ -4,6 +4,15 @@ import { isSupabaseConfigured, supabase } from '../services/supabaseClient.js';
 
 export const AuthContext = createContext(null);
 
+function withTimeout(promise, milliseconds = 4500) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('Session request timeout')), milliseconds);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -28,16 +37,23 @@ export function AuthProvider({ children }) {
 
       let data = { session: null };
       try {
-        const response = await supabase.auth.getSession();
+        const response = await withTimeout(supabase.auth.getSession());
         data = response.data;
       } catch {
+        if (!active) return;
+        setSession(null);
+        setProfile(null);
         setLoading(false);
         return;
       }
       if (!active) return;
       setSession(data.session);
       if (data.session?.user?.id) {
-        setProfile(await getProfile(data.session.user.id));
+        try {
+          setProfile(await withTimeout(getProfile(data.session.user.id)));
+        } catch {
+          setProfile(null);
+        }
       }
       setLoading(false);
     }
@@ -69,7 +85,11 @@ export function AuthProvider({ children }) {
         return;
       }
       setSession(nextSession);
-      setProfile(nextSession?.user?.id ? await getProfile(nextSession.user.id) : null);
+      try {
+        setProfile(nextSession?.user?.id ? await withTimeout(getProfile(nextSession.user.id)) : null);
+      } catch {
+        setProfile(null);
+      }
       setLoading(false);
     });
 

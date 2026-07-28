@@ -73,30 +73,30 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="relative overflow-hidden border-b border-white/70">
+      <section className="hero-stage">
         <div className="animated-grid absolute inset-0 opacity-80" aria-hidden="true" />
-        <div className="container-page relative grid gap-8 py-14 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-primary">{t('portalEyebrow')}</p>
-            <h1 className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight text-text sm:text-5xl">
+        <div className="container-page relative grid gap-10 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <div className="hero-copy">
+            <p className="inline-flex rounded-lg border border-primary/20 bg-white/65 px-3 py-2 text-sm font-extrabold uppercase tracking-wide text-primary shadow-sm backdrop-blur">{t('portalEyebrow')}</p>
+            <h1 className="mt-5 max-w-4xl text-5xl font-extrabold leading-tight text-text sm:text-6xl">
               {t('projectTitle')}
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
+            <p className="mt-5 max-w-2xl text-xl leading-9 text-muted">
               {t('heroSubtitle')}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-[#16834A] px-6 py-3 text-sm font-bold text-white shadow-glow transition hover:-translate-y-0.5" to="/voter">
+              <Link className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary via-[#0B7A59] to-[#16834A] px-6 py-3 text-sm font-extrabold text-white shadow-glow transition hover:-translate-y-1" to="/voter">
                 <Vote size={18} aria-hidden="true" />
                 {t('viewElections')}
               </Link>
-              <Link className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-primary bg-white/80 px-6 py-3 text-sm font-bold text-primary shadow-soft transition hover:-translate-y-0.5 hover:bg-primary-light" to="/how-it-works">
+              <Link className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-primary/70 bg-white/85 px-6 py-3 text-sm font-extrabold text-primary shadow-soft backdrop-blur transition hover:-translate-y-1 hover:bg-primary-light" to="/how-it-works">
                 <ShieldCheck size={18} aria-hidden="true" />
                 {t('howVotingWorks')}
               </Link>
             </div>
           </div>
 
-          <div className="glass-panel relative overflow-hidden rounded-xl p-5">
+          <div className="live-monitor overflow-hidden">
             <div className="shimmer-line absolute inset-x-0 top-0 h-1" aria-hidden="true" />
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -106,15 +106,15 @@ export default function HomePage() {
               <StatusBadge status={firstElection?.status ?? 'pending'} />
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-white/70 bg-white/70 p-3">
+              <div className="metric-tile">
                 <p className="text-xs font-semibold uppercase text-muted">{t('totalVotes')}</p>
                 <p className="mt-1 text-2xl font-extrabold text-text">{firstElection?.total_votes ?? 0}</p>
               </div>
-              <div className="rounded-lg border border-white/70 bg-white/70 p-3">
+              <div className="metric-tile">
                 <p className="text-xs font-semibold uppercase text-muted">{t('leading')}</p>
                 <p className="mt-1 truncate text-base font-extrabold text-primary">{localize(firstElection?.leader_name ?? 'Waiting')}</p>
               </div>
-              <div className="rounded-lg border border-white/70 bg-white/70 p-3">
+              <div className="metric-tile">
                 <p className="text-xs font-semibold uppercase text-muted">{t('timeLeft')}</p>
                 <p className="mt-1 text-2xl font-extrabold text-text">{localizeTime(firstElection?.time_left ?? '--')}</p>
               </div>
@@ -131,7 +131,7 @@ export default function HomePage() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border bg-white/60 text-center text-sm font-semibold text-muted">
+                <div className="chart-empty flex h-full items-center justify-center rounded-lg border border-dashed border-primary/30 text-center text-sm font-bold text-muted">
                   Live chart will appear after admin creates an active election and votes are stored in Supabase.
                 </div>
               )}

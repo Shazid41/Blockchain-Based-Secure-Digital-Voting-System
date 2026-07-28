@@ -16,6 +16,7 @@ function friendlyLoginError(error) {
   const message = String(error?.message ?? '').toLowerCase();
   if (message.includes('email not confirmed')) return 'Please verify your email before logging in.';
   if (message.includes('invalid')) return 'Invalid email or password.';
+  if (message.includes('database connection') || message.includes('failed to fetch') || message.includes('request timeout')) return 'Live database is not reachable. Resume/check the Supabase project, then try again.';
   if (message.includes('supabase is not configured')) return error.message;
   return 'Network or authentication error. Please try again.';
 }
@@ -65,7 +66,12 @@ export default function LoginPage({ adminMode = false }) {
     <>
       <PageHeader title={adminMode ? t('adminLogin') : t('voterLogin')} description={t('visitorMessage')} />
       <section className="container-page py-10">
-        <form className="card mx-auto max-w-xl space-y-5 p-6" onSubmit={handleSubmit}>
+        <form className="card relative mx-auto max-w-xl space-y-5 overflow-hidden p-7" onSubmit={handleSubmit}>
+          <div className="shimmer-line absolute inset-x-0 top-0 h-1" aria-hidden="true" />
+          <div className="rounded-lg border border-primary/15 bg-gradient-to-r from-primary-light to-white p-4">
+            <p className="text-sm font-extrabold uppercase tracking-wide text-primary">{adminMode ? 'Administrator access' : 'Verified voter access'}</p>
+            <p className="mt-1 text-sm text-muted">Live authentication is connected to Supabase. Database must be active for login.</p>
+          </div>
           {notice ? <AlertMessage type="success">{notice}</AlertMessage> : null}
           {error ? <AlertMessage type="error">{error}</AlertMessage> : null}
           <FormInput id="email" label={t('emailAddress')} type="email" value={form.email} onChange={update('email')} />
