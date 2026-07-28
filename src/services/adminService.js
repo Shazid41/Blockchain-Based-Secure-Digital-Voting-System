@@ -1,8 +1,31 @@
 import { demoCandidates, demoElections, demoRegions, demoVoters } from './demoData.js';
 import { listLocalVoterProfiles } from './authService.js';
+import { isFirebaseConfigured } from './firebaseClient.js';
+import { listFirebaseCandidates, listFirebaseElections, listFirebaseRegions, listFirebaseVoters } from './firebaseStore.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 export async function getAdminSummary() {
+  if (isFirebaseConfigured) {
+    const [voters, elections, candidates, regions] = await Promise.all([
+      listFirebaseVoters(),
+      listFirebaseElections(),
+      listFirebaseCandidates(),
+      listFirebaseRegions(),
+    ]);
+    return {
+      totalVoters: voters.length,
+      approvedVoters: voters.filter((voter) => voter.approval_status === 'approved').length,
+      pendingVoters: voters.filter((voter) => voter.approval_status === 'pending').length,
+      activeElections: elections.filter((election) => election.status === 'active').length,
+      totalCandidates: candidates.length,
+      totalRegions: regions.length,
+      recentVoters: voters.slice(0, 5),
+      upcomingElections: elections
+        .filter((election) => !election.end_time || new Date(election.end_time).getTime() >= Date.now())
+        .slice(0, 5),
+    };
+  }
+
   if (isSupabaseConfigured) {
     const [
       votersCount,

@@ -1,4 +1,14 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  updatePassword as updateFirebasePassword,
+} from 'firebase/auth';
+import { firebaseAuth, isFirebaseConfigured } from './firebaseClient.js';
+import { ensureFirebaseSeed, getFirebaseProfile, upsertFirebaseProfile } from './firebaseStore.js';
 import { isDemoNidApproved } from './nidService.js';
 
 const productionSiteUrl = 'https://shazid41.github.io/Blockchain-Based-Secure-Digital-Voting-System/';
@@ -33,6 +43,27 @@ function withTimeout(promise, milliseconds = 4000) {
   });
 
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+}
+
+function normalizeFirebaseUser(user) {
+  if (!user) return null;
+  return {
+    uid: user.uid,
+    id: user.uid,
+    email: user.email,
+    email_confirmed_at: user.emailVerified ? new Date().toISOString() : null,
+    app_metadata: { provider: 'firebase' },
+    user_metadata: {},
+  };
+}
+
+function firebaseSession(user) {
+  const normalized = normalizeFirebaseUser(user);
+  return {
+    access_token: user?.accessToken ?? `firebase-${user?.uid}`,
+    token_type: 'bearer',
+    user: normalized,
+  };
 }
 
 function readJson(key, fallback) {
@@ -157,6 +188,17 @@ function createLocalVoter({ email, password, fullName, voterNumber, phone, dateO
 }
 
 export async function registerVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId }) {
+  if (isFirebaseConfigured) {
+    const { user } = await withTimeout(createUserWithEmailAndPassword(firebaseAuth, email, password), 10000);
+    const profile = await upsertFirebaseProfile(user, { email, fullName, voterNumber, phone, dateOfBirth, regionId });
+    try {
+      await sendEmailVerification(user, { url: appUrl('/verify-email') });
+    } catch {
+      // Firebase account/profile is already live; users can still login and admins can approve.
+    }
+    return { user: normalizeFirebaseUser(user), session: firebaseSession(user), profile, firebase: true };
+  }
+
   if (!isSupabaseConfigured) return createLocalVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId });
 
   const { data, error } = await withTimeout(supabase.auth.signUp({
@@ -181,6 +223,24 @@ export async function registerVoter({ email, password, fullName, voterNumber, ph
 }
 
 export async function loginWithPassword(email, password) {
+  if (isFirebaseConfigured) {
+    try {
+      const { user } = await withTimeout(signInWithEmailAndPassword(firebaseAuth, email, password), 10000);
+      const profile = (await getFirebaseProfile(user.uid)) ?? (await upsertFirebaseProfile(user, { email }));
+      if (profile?.role === 'admin') await ensureFirebaseSeed();
+      return { user: normalizeFirebaseUser(user), session: firebaseSession(user), profile, firebase: true };
+    } catch (error) {
+      const code = String(error?.code ?? '');
+      if (email.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD && code.includes('user-not-found')) {
+        const { user } = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+        const profile = await upsertFirebaseProfile(user, { email });
+        await ensureFirebaseSeed();
+        return { user: normalizeFirebaseUser(user), session: firebaseSession(user), profile, firebase: true };
+      }
+      throw error;
+    }
+  }
+
   if (!isSupabaseConfigured) {
     if (email.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
       return saveLocalSession(adminProfile());
@@ -205,6 +265,7 @@ export async function loginWithPassword(email, password) {
 }
 
 export async function loginWithOtp(email) {
+  if (isFirebaseConfigured) return sendPasswordReset(email);
   requireSupabase();
   const { data, error } = await supabase.auth.signInWithOtp({
     email,
@@ -217,6 +278,16 @@ export async function loginWithOtp(email) {
 }
 
 export async function resendSignupVerification(email) {
+  if (isFirebaseConfigured) {
+    if (!firebaseAuth?.currentUser) {
+      throw new Error('Login once, then request a fresh verification email from your account.');
+    }
+    if (firebaseAuth.currentUser.email?.toLowerCase() !== email.toLowerCase()) {
+      throw new Error('This browser is signed in with a different email.');
+    }
+    return sendEmailVerification(firebaseAuth.currentUser, { url: appUrl('/verify-email') });
+  }
+
   const localAccount = findLocalAccount(email);
   if (localAccount) return saveLocalSession(localAccount.profile);
 
@@ -240,12 +311,19 @@ export async function resendSignupVerification(email) {
 export async function logout() {
   localStorage.removeItem(LOCAL_SESSION_KEY);
   window.dispatchEvent(new Event('secure-voting-auth-change'));
+  if (isFirebaseConfigured) {
+    await firebaseSignOut(firebaseAuth);
+    return;
+  }
   if (!isSupabaseConfigured) return;
   const { error } = await supabase.auth.signOut();
   if (error && !isNetworkError(error)) throw error;
 }
 
 export async function sendPasswordReset(email) {
+  if (isFirebaseConfigured) {
+    return sendPasswordResetEmail(firebaseAuth, email, { url: appUrl('/login') });
+  }
   requireSupabase();
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: appUrl('/reset-password'),
@@ -255,6 +333,10 @@ export async function sendPasswordReset(email) {
 }
 
 export async function updatePassword(password) {
+  if (isFirebaseConfigured) {
+    if (!firebaseAuth?.currentUser) throw new Error('Please login again before changing password.');
+    return updateFirebasePassword(firebaseAuth.currentUser, password);
+  }
   requireSupabase();
   const { data, error } = await supabase.auth.updateUser({ password });
   if (error) throw error;
@@ -264,6 +346,7 @@ export async function updatePassword(password) {
 export async function getProfile(userId) {
   const localState = getLocalAuthState();
   if (localState.profile?.id === userId) return localState.profile;
+  if (isFirebaseConfigured && userId) return getFirebaseProfile(userId);
   if (!isSupabaseConfigured || !userId) return null;
   try {
     const { data, error } = await withTimeout(supabase.from('profiles').select('*').eq('id', userId).maybeSingle());

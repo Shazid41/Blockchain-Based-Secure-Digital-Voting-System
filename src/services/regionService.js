@@ -1,4 +1,6 @@
 import { demoRegions } from './demoData.js';
+import { isFirebaseConfigured } from './firebaseClient.js';
+import { deleteFirebaseRegion, listFirebaseRegions, saveFirebaseRegion } from './firebaseStore.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 function fallbackRegions() {
@@ -15,6 +17,7 @@ function withTimeout(promise, milliseconds = 4000) {
 }
 
 export async function listRegions() {
+  if (isFirebaseConfigured) return listFirebaseRegions();
   if (!isSupabaseConfigured) return fallbackRegions();
   try {
     const { data, error } = await withTimeout(supabase.from('regions').select('*').order('name'));
@@ -26,6 +29,7 @@ export async function listRegions() {
 }
 
 export async function createRegion(region) {
+  if (isFirebaseConfigured) return saveFirebaseRegion(region);
   if (!isSupabaseConfigured) return { ...region, id: crypto.randomUUID() };
   const { data, error } = await supabase.from('regions').insert(region).select().single();
   if (error) throw error;
@@ -33,6 +37,7 @@ export async function createRegion(region) {
 }
 
 export async function updateRegion(id, region) {
+  if (isFirebaseConfigured) return saveFirebaseRegion({ ...region, id });
   if (!isSupabaseConfigured) return { ...region, id };
   const { data, error } = await supabase.from('regions').update(region).eq('id', id).select().single();
   if (error) throw error;
@@ -40,6 +45,7 @@ export async function updateRegion(id, region) {
 }
 
 export async function deleteRegion(id) {
+  if (isFirebaseConfigured) return deleteFirebaseRegion(id);
   if (!isSupabaseConfigured) return id;
   const { error } = await supabase.from('regions').delete().eq('id', id);
   if (error) throw error;

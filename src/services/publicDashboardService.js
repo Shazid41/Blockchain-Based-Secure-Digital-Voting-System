@@ -1,4 +1,6 @@
 import { demoBallots, demoCandidates, demoElections, regionName } from './demoData.js';
+import { isFirebaseConfigured } from './firebaseClient.js';
+import { listFirebasePublicDashboard } from './firebaseStore.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 function hoursLeft(endTime) {
@@ -47,6 +49,11 @@ function demoSnapshots() {
 }
 
 export async function listPublicElectionDashboard() {
+  if (isFirebaseConfigured) {
+    const snapshots = await listFirebasePublicDashboard();
+    return snapshots.map((row) => ({ ...row, time_left: hoursLeft(row.end_time) }));
+  }
+
   if (!isSupabaseConfigured) return demoSnapshots();
 
   let data;

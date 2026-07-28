@@ -1,8 +1,15 @@
 import { demoElections, demoReceipt } from './demoData.js';
+import { firebaseAuth, isFirebaseConfigured } from './firebaseClient.js';
+import { castFirebaseVote } from './firebaseStore.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 export async function castSecureVote(electionId, candidateId) {
   if (!candidateId) throw new Error('Please select a candidate.');
+  if (isFirebaseConfigured) {
+    const voterId = firebaseAuth?.currentUser?.uid;
+    if (!voterId) throw new Error('Please login again before casting your vote.');
+    return castFirebaseVote({ voterId, electionId, candidateId });
+  }
   if (!isSupabaseConfigured) {
     const election = demoElections.find((item) => item.id === electionId);
     await new Promise((resolve) => setTimeout(resolve, 400));

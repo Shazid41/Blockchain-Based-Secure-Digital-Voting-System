@@ -1,5 +1,7 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { getLocalAuthState, getProfile, logout as logoutUser } from '../services/authService.js';
+import { firebaseAuth, isFirebaseConfigured } from '../services/firebaseClient.js';
 import { isSupabaseConfigured, supabase } from '../services/supabaseClient.js';
 
 export const AuthContext = createContext(null);
@@ -13,6 +15,22 @@ function withTimeout(promise, milliseconds = 4500) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
+function firebaseSession(user) {
+  if (!user) return null;
+  return {
+    access_token: user.accessToken ?? `firebase-${user.uid}`,
+    token_type: 'bearer',
+    user: {
+      uid: user.uid,
+      id: user.uid,
+      email: user.email,
+      email_confirmed_at: user.emailVerified ? new Date().toISOString() : null,
+      app_metadata: { provider: 'firebase' },
+      user_metadata: {},
+    },
+  };
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -22,6 +40,8 @@ export function AuthProvider({ children }) {
     let active = true;
 
     async function loadSession() {
+      if (isFirebaseConfigured) return;
+
       const localState = getLocalAuthState();
       if (!isSupabaseConfigured && localState.session?.user) {
         setSession(localState.session);
@@ -70,6 +90,35 @@ export function AuthProvider({ children }) {
 
     window.addEventListener('secure-voting-auth-change', loadLocalSession);
 
+    if (isFirebaseConfigured) {
+      const timer = setTimeout(() => {
+        if (!active) return;
+        setSession(null);
+        setProfile(null);
+        setLoading(false);
+      }, 7000);
+
+      const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+        if (!active) return;
+        clearTimeout(timer);
+        const nextSession = firebaseSession(user);
+        setSession(nextSession);
+        try {
+          setProfile(user?.uid ? await withTimeout(getProfile(user.uid), 7000) : null);
+        } catch {
+          setProfile(null);
+        }
+        setLoading(false);
+      });
+
+      return () => {
+        active = false;
+        clearTimeout(timer);
+        window.removeEventListener('secure-voting-auth-change', loadLocalSession);
+        unsubscribe();
+      };
+    }
+
     if (!isSupabaseConfigured) {
       return () => {
         active = false;
@@ -107,7 +156,7 @@ export function AuthProvider({ children }) {
       profile,
       loading,
       isAuthenticated: Boolean(session?.user),
-      isConfigured: isSupabaseConfigured,
+      isConfigured: isFirebaseConfigured || isSupabaseConfigured,
       logout: logoutUser,
     }),
     [loading, profile, session],

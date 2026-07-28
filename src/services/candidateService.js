@@ -1,7 +1,10 @@
 import { demoCandidates } from './demoData.js';
+import { isFirebaseConfigured } from './firebaseClient.js';
+import { listFirebaseCandidates, saveFirebaseCandidate } from './firebaseStore.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 export async function listCandidates(filters = {}) {
+  if (isFirebaseConfigured) return listFirebaseCandidates(filters);
   if (!isSupabaseConfigured) {
     return demoCandidates.filter((candidate) => !filters.electionId || candidate.election_id === filters.electionId);
   }
@@ -13,6 +16,7 @@ export async function listCandidates(filters = {}) {
 }
 
 export async function saveCandidate(candidate) {
+  if (isFirebaseConfigured) return saveFirebaseCandidate(candidate);
   if (!isSupabaseConfigured) return { ...candidate, id: candidate.id ?? crypto.randomUUID() };
   const { id, created_at: _createdAt, updated_at: _updatedAt, ...payload } = candidate;
   delete payload.elections;

@@ -1,5 +1,7 @@
 import { demoVoters } from './demoData.js';
 import { listLocalVoterProfiles, updateLocalVoterStatus } from './authService.js';
+import { isFirebaseConfigured } from './firebaseClient.js';
+import { listFirebaseVoters, updateFirebaseVoterStatus } from './firebaseStore.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 function mergedDemoVoters() {
@@ -18,6 +20,7 @@ function withTimeout(promise, milliseconds = 4000) {
 }
 
 export async function listVoters() {
+  if (isFirebaseConfigured) return listFirebaseVoters();
   if (!isSupabaseConfigured) return mergedDemoVoters();
   const { data, error } = await withTimeout(
     supabase.from('profiles').select('*, regions(name)').eq('role', 'voter').order('created_at', { ascending: false }),
@@ -27,6 +30,7 @@ export async function listVoters() {
 }
 
 export async function updateVoterStatus(id, approvalStatus) {
+  if (isFirebaseConfigured) return updateFirebaseVoterStatus(id, approvalStatus);
   const localUpdated = updateLocalVoterStatus(id, approvalStatus);
   if (localUpdated) return localUpdated;
 

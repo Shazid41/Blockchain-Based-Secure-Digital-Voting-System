@@ -1,7 +1,33 @@
 import { demoBallots, demoCandidates, demoEligibility } from './demoData.js';
+import { isFirebaseConfigured } from './firebaseClient.js';
+import { listFirebaseBallots, listFirebaseCandidates, listFirebaseEligibility } from './firebaseStore.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 export async function getElectionResults(electionId) {
+  if (isFirebaseConfigured) {
+    const [candidates, ballots, eligibilityRows] = await Promise.all([
+      listFirebaseCandidates({ electionId }),
+      listFirebaseBallots({ electionId }),
+      listFirebaseEligibility({ electionId }),
+    ]);
+    const eligible = eligibilityRows.filter((row) => row.election_id === electionId && row.is_eligible);
+    const totalVotes = ballots.length;
+    return candidates.map((candidate) => {
+      const voteCount = ballots.filter((ballot) => ballot.candidate_id === candidate.id).length;
+      return {
+        election_id: electionId,
+        candidate_id: candidate.id,
+        candidate_name: candidate.full_name,
+        vote_count: voteCount,
+        percentage: totalVotes ? Math.round((voteCount / totalVotes) * 10000) / 100 : 0,
+        total_votes: totalVotes,
+        total_eligible_voters: eligible.length,
+        turnout_percentage: eligible.length ? Math.round((totalVotes / eligible.length) * 10000) / 100 : 0,
+        last_update_time: new Date().toISOString(),
+      };
+    });
+  }
+
   if (!isSupabaseConfigured) {
     const candidates = demoCandidates.filter((candidate) => candidate.election_id === electionId);
     const ballots = demoBallots.filter((ballot) => ballot.election_id === electionId);

@@ -1,7 +1,10 @@
 import { demoElections } from './demoData.js';
+import { isFirebaseConfigured } from './firebaseClient.js';
+import { listFirebaseElections, saveFirebaseElection } from './firebaseStore.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 export async function listElections() {
+  if (isFirebaseConfigured) return listFirebaseElections();
   if (!isSupabaseConfigured) return demoElections;
   const { data, error } = await supabase.from('elections').select('*, regions(name, code)').order('start_time');
   if (error) throw error;
@@ -14,6 +17,7 @@ export async function getElection(id) {
 }
 
 export async function saveElection(election) {
+  if (isFirebaseConfigured) return saveFirebaseElection(election);
   if (!isSupabaseConfigured) return { ...election, id: election.id ?? crypto.randomUUID() };
   const { id, created_at: _createdAt, updated_at: _updatedAt, ...payload } = election;
   delete payload.regions;
