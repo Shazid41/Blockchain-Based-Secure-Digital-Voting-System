@@ -1,5 +1,5 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
-import { getProfile, logout as logoutUser } from '../services/authService.js';
+import { getLocalAuthState, getProfile, logout as logoutUser } from '../services/authService.js';
 import { isSupabaseConfigured, supabase } from '../services/supabaseClient.js';
 
 export const AuthContext = createContext(null);
@@ -13,12 +13,27 @@ export function AuthProvider({ children }) {
     let active = true;
 
     async function loadSession() {
+      const localState = getLocalAuthState();
+      if (localState.session?.user) {
+        setSession(localState.session);
+        setProfile(localState.profile);
+        setLoading(false);
+        return;
+      }
+
       if (!isSupabaseConfigured) {
         setLoading(false);
         return;
       }
 
-      const { data } = await supabase.auth.getSession();
+      let data = { session: null };
+      try {
+        const response = await supabase.auth.getSession();
+        data = response.data;
+      } catch {
+        setLoading(false);
+        return;
+      }
       if (!active) return;
       setSession(data.session);
       if (data.session?.user?.id) {
@@ -29,8 +44,29 @@ export function AuthProvider({ children }) {
 
     loadSession();
 
-    if (!isSupabaseConfigured) return () => {};
+    function loadLocalSession() {
+      const localState = getLocalAuthState();
+      setSession(localState.session);
+      setProfile(localState.profile);
+      setLoading(false);
+    }
+
+    window.addEventListener('secure-voting-auth-change', loadLocalSession);
+
+    if (!isSupabaseConfigured) {
+      return () => {
+        active = false;
+        window.removeEventListener('secure-voting-auth-change', loadLocalSession);
+      };
+    }
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      const localState = getLocalAuthState();
+      if (localState.session?.user) {
+        setSession(localState.session);
+        setProfile(localState.profile);
+        setLoading(false);
+        return;
+      }
       setSession(nextSession);
       setProfile(nextSession?.user?.id ? await getProfile(nextSession.user.id) : null);
       setLoading(false);
@@ -38,6 +74,7 @@ export function AuthProvider({ children }) {
 
     return () => {
       active = false;
+      window.removeEventListener('secure-voting-auth-change', loadLocalSession);
       listener.subscription.unsubscribe();
     };
   }, []);

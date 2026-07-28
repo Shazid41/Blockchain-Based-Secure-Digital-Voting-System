@@ -118,7 +118,11 @@ export default function RegisterPage() {
         ...form,
         regionId: selectedRegion?.isFallback ? '' : form.regionId,
       };
-      await registerVoter(registrationPayload);
+      const registration = await registerVoter(registrationPayload);
+      if (registration?.local) {
+        navigate('/voter');
+        return;
+      }
       let delivery = 'sent';
       try {
         await resendSignupVerification(form.email);

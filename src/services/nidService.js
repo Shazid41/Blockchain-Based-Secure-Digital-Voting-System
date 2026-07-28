@@ -13,6 +13,10 @@ export const demoApprovedNids = [
   { nid: '1234567890123456', note: 'Demo voter 10', is_active: true },
 ];
 
+export function isDemoNidApproved(nid) {
+  return demoApprovedNids.some((row) => row.nid === nid && row.is_active);
+}
+
 export async function listApprovedNids() {
   if (!isSupabaseConfigured) return demoApprovedNids;
   const { data, error } = await supabase
@@ -39,7 +43,7 @@ export async function updateApprovedNid(nid, updates) {
 
 export async function checkNidForSignup(nid) {
   if (!isSupabaseConfigured) {
-    return demoApprovedNids.some((row) => row.nid === nid && row.is_active);
+    return isDemoNidApproved(nid);
   }
   const { data, error } = await supabase.rpc('is_nid_available_for_signup', { p_nid: nid });
   if (error) throw error;
