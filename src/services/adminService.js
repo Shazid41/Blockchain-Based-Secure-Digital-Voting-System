@@ -1,10 +1,13 @@
 import { demoCandidates, demoElections, demoRegions, demoVoters } from './demoData.js';
+import { listLocalVoterProfiles } from './authService.js';
 
 export async function getAdminSummary() {
-  const approved = demoVoters.filter((voter) => voter.approval_status === 'approved').length;
-  const pending = demoVoters.filter((voter) => voter.approval_status === 'pending').length;
+  const localVoters = listLocalVoterProfiles();
+  const voters = [...localVoters, ...demoVoters];
+  const approved = voters.filter((voter) => voter.approval_status === 'approved').length;
+  const pending = voters.filter((voter) => voter.approval_status === 'pending').length;
   return {
-    totalVoters: demoVoters.length,
+    totalVoters: voters.length,
     approvedVoters: approved,
     pendingVoters: pending,
     activeElections: demoElections.filter((election) => election.status === 'active').length,

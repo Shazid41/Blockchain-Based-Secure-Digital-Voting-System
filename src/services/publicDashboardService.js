@@ -49,13 +49,20 @@ function demoSnapshots() {
 export async function listPublicElectionDashboard() {
   if (!isSupabaseConfigured) return demoSnapshots();
 
-  const { data, error } = await supabase.rpc('public_live_election_dashboard');
-  if (error) return demoSnapshots();
+  let data;
+  try {
+    const response = await supabase.rpc('public_live_election_dashboard');
+    if (response.error) return demoSnapshots();
+    data = response.data;
+  } catch {
+    return demoSnapshots();
+  }
   if (!data?.length) return demoSnapshots();
 
-  return data.map((row) => ({
+  const snapshots = data.map((row) => ({
     ...row,
     candidates: Array.isArray(row.candidates) ? row.candidates : [],
     time_left: hoursLeft(row.end_time),
   }));
+  return snapshots.some((row) => row.candidates.length > 0 && Number(row.total_votes) > 0) ? snapshots : demoSnapshots();
 }

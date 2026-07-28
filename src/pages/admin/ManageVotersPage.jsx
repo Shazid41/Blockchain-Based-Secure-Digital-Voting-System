@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ConfirmationModal from '../../components/common/ConfirmationModal.jsx';
 import FormInput from '../../components/common/FormInput.jsx';
 import PageHeader from '../../components/common/PageHeader.jsx';
@@ -6,14 +6,24 @@ import SelectInput from '../../components/common/SelectInput.jsx';
 import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
 import { demoRegions, regionName } from '../../services/demoData.js';
-import { updateVoterStatus } from '../../services/voterService.js';
-import { demoVoters } from '../../services/demoData.js';
+import { listVoters, updateVoterStatus } from '../../services/voterService.js';
 
 export default function ManageVotersPage() {
-  const [voters, setVoters] = useState(demoVoters);
+  const [voters, setVoters] = useState([]);
   const [filters, setFilters] = useState({ search: '', region: '', status: '' });
   const [pending, setPending] = useState(null);
   const [selected, setSelected] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    listVoters().then((rows) => {
+      if (active) setVoters(rows);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
   const filtered = useMemo(() => voters.filter((voter) => {
     const text = `${voter.full_name} ${voter.email} ${voter.voter_number}`.toLowerCase();
     return (!filters.search || text.includes(filters.search.toLowerCase()))
@@ -22,8 +32,8 @@ export default function ManageVotersPage() {
   }), [filters, voters]);
 
   async function confirmStatus() {
-    await updateVoterStatus(pending.voter.id, pending.status);
-    setVoters((rows) => rows.map((row) => row.id === pending.voter.id ? { ...row, approval_status: pending.status } : row));
+    const updated = await updateVoterStatus(pending.voter.id, pending.status);
+    setVoters((rows) => rows.map((row) => row.id === pending.voter.id ? { ...row, ...updated, approval_status: pending.status } : row));
     setPending(null);
   }
 

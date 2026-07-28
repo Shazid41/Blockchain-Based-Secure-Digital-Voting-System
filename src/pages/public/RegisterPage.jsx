@@ -104,8 +104,7 @@ export default function RegisterPage() {
     setStep((value) => Math.min(value + 1, 2));
   }
 
-  async function submit(event) {
-    event.preventDefault();
+  async function submit() {
     setError('');
     if (Object.keys(currentErrors).length > 0) {
       setError('Please complete the review step.');
@@ -146,7 +145,7 @@ export default function RegisterPage() {
     <>
       <PageHeader title={t('voterRegistration')} description={t('registrationDescription')} />
       <section className="container-page py-10">
-        <form className="card mx-auto max-w-3xl space-y-6 p-6" onSubmit={submit}>
+        <form className="card mx-auto max-w-3xl space-y-6 p-6" onSubmit={(event) => event.preventDefault()}>
           <div className="grid gap-3 sm:grid-cols-3">
             {[t('account'), t('voterInformation'), t('review')].map((label, index) => (
               <div key={label} className={`rounded border p-3 text-sm font-semibold ${index === step ? 'border-primary bg-primary-light text-primary-dark' : 'border-border text-muted'}`}>
@@ -199,7 +198,7 @@ export default function RegisterPage() {
                 {loading ? 'Checking...' : t('continue')}
               </PrimaryButton>
             ) : (
-              <PrimaryButton type="submit" disabled={loading}>
+              <PrimaryButton type="button" disabled={loading} onClick={submit}>
                 {loading ? 'Creating account...' : t('submitRegistration')}
               </PrimaryButton>
             )}

@@ -26,7 +26,12 @@ function isNetworkError(error) {
   return message.includes('failed to fetch') || message.includes('network') || message.includes('timeout') || message.includes('fetch failed');
 }
 
-function withTimeout(promise, milliseconds = 6000) {
+function isRecoverableSignupError(error) {
+  const message = String(error?.message || error || '').toLowerCase();
+  return isNetworkError(error) || message.includes('already registered') || message.includes('already been registered') || message.includes('duplicate');
+}
+
+function withTimeout(promise, milliseconds = 900) {
   let timeoutId;
   const timeout = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error('Request timeout')), milliseconds);
@@ -97,6 +102,10 @@ function getLocalAccounts() {
   return readJson(LOCAL_ACCOUNTS_KEY, []);
 }
 
+export function listLocalVoterProfiles() {
+  return getLocalAccounts().map((account) => account.profile);
+}
+
 function saveLocalAccount(account) {
   const accounts = getLocalAccounts();
   const exists = accounts.some(
@@ -104,6 +113,28 @@ function saveLocalAccount(account) {
   );
   if (exists) throw new Error('This email or NID is already used.');
   writeJson(LOCAL_ACCOUNTS_KEY, [...accounts, account]);
+}
+
+export function updateLocalVoterStatus(id, approvalStatus) {
+  const accounts = getLocalAccounts();
+  let updatedProfile = null;
+  const updatedAccounts = accounts.map((account) => {
+    if (account.profile.id !== id) return account;
+    updatedProfile = { ...account.profile, approval_status: approvalStatus };
+    return { ...account, profile: updatedProfile };
+  });
+
+  if (!updatedProfile) return null;
+  writeJson(LOCAL_ACCOUNTS_KEY, updatedAccounts);
+
+  const localState = getLocalAuthState();
+  if (localState.profile?.id === id) {
+    saveLocalSession(updatedProfile);
+  } else {
+    window.dispatchEvent(new Event('secure-voting-auth-change'));
+  }
+
+  return updatedProfile;
 }
 
 function findLocalAccount(email) {
@@ -154,7 +185,7 @@ export async function registerVoter({ email, password, fullName, voterNumber, ph
     if (error) throw error;
     return data;
   } catch (error) {
-    if (isNetworkError(error)) return createLocalVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId });
+    if (isRecoverableSignupError(error)) return createLocalVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId });
     throw error;
   }
 }

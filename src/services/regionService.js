@@ -5,7 +5,7 @@ function fallbackRegions() {
   return demoRegions.map((region) => ({ ...region, isFallback: true }));
 }
 
-function withTimeout(promise, milliseconds = 3500) {
+function withTimeout(promise, milliseconds = 900) {
   let timeoutId;
   const timeout = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error('Region request timed out')), milliseconds);

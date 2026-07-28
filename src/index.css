@@ -48,8 +48,8 @@ body::after {
   width: 28rem;
   height: 28rem;
   border-radius: 999px;
-  filter: blur(18px);
-  opacity: 0.45;
+  filter: blur(12px);
+  opacity: 0.28;
   pointer-events: none;
 }
 
@@ -57,24 +57,12 @@ body::before {
   top: 8rem;
   left: -8rem;
   background: radial-gradient(circle, rgba(0, 106, 78, 0.28), transparent 64%);
-  animation: float-bg 14s ease-in-out infinite;
 }
 
 body::after {
   right: -10rem;
   bottom: 8rem;
   background: radial-gradient(circle, rgba(37, 99, 166, 0.18), transparent 66%);
-  animation: float-bg 17s ease-in-out infinite reverse;
-}
-
-@keyframes float-bg {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(2rem, -1.5rem, 0) scale(1.08);
-  }
 }
 
 @keyframes shimmer {
