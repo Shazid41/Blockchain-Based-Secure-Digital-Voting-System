@@ -116,7 +116,12 @@ export default function RegisterPage() {
     }
     try {
       setLoading(true);
-      await registerVoter(form);
+      const selectedRegion = regions.find((region) => region.id === form.regionId);
+      const registrationPayload = {
+        ...form,
+        regionId: selectedRegion?.isFallback ? '' : form.regionId,
+      };
+      await registerVoter(registrationPayload);
       let delivery = 'sent';
       try {
         await resendSignupVerification(form.email);
