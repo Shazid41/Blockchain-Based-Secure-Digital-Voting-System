@@ -1,6 +1,15 @@
 # Firebase Live Database Setup
 
-This project now supports Firebase Authentication and Cloud Firestore as the preferred live backend. Supabase stays as a fallback only when Firebase environment variables are missing.
+This project now uses Firebase Authentication and Cloud Firestore as the preferred live backend. Supabase is disabled for production because the old Supabase project was paused.
+
+## Current Firebase Project
+
+- Project ID: `shazid-secure-voting-2026`
+- Project name: `Secure Voting System`
+- Web app: `Secure Voting Web`
+- Firestore location: `asia-south1`
+- Hosting domain authorized for Auth: `shazid41.github.io`
+- Production config file: `.env.production`
 
 ## Required Setup
 
@@ -22,12 +31,12 @@ This project now supports Firebase Authentication and Cloud Firestore as the pre
 
 ## First Admin Login
 
-After Firebase is configured, login with:
+The admin account has been created in Firebase Auth. Login with:
 
 - Email: `shazidsaharia21@gmail.com`
 - Password: `Shazid@961`
 
-If this admin account does not exist yet, the app creates it and seeds default regions plus the 10 approved NID numbers into Firestore. After that, voter registration reads the live NID list from Firestore and pending voters appear in the admin voter table.
+Default regions, the 10 approved NID numbers, one active election, and three candidates were seeded into Firestore. Voter registration reads the live NID list from Firestore and pending voters appear in the admin voter table.
 
 ## Why This Fixes The Previous Problems
 

@@ -10,9 +10,11 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
+const disableFirebase = import.meta.env.VITE_DISABLE_FIREBASE === 'true';
 
 export const isFirebaseConfigured = Boolean(
-  firebaseConfig.apiKey
+  !disableFirebase
+  && firebaseConfig.apiKey
   && firebaseConfig.authDomain
   && firebaseConfig.projectId
   && firebaseConfig.appId,
