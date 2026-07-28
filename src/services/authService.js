@@ -26,12 +26,7 @@ function isNetworkError(error) {
   return message.includes('failed to fetch') || message.includes('network') || message.includes('timeout') || message.includes('fetch failed');
 }
 
-function isRecoverableSignupError(error) {
-  const message = String(error?.message || error || '').toLowerCase();
-  return isNetworkError(error) || message.includes('already registered') || message.includes('already been registered') || message.includes('duplicate');
-}
-
-function withTimeout(promise, milliseconds = 900) {
+function withTimeout(promise, milliseconds = 4000) {
   let timeoutId;
   const timeout = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error('Request timeout')), milliseconds);
@@ -164,50 +159,47 @@ function createLocalVoter({ email, password, fullName, voterNumber, phone, dateO
 export async function registerVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId }) {
   if (!isSupabaseConfigured) return createLocalVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId });
 
-  try {
-    const { data, error } = await withTimeout(supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: appUrl('/verify-email'),
-        data: {
-          full_name: fullName,
-          voter_number: voterNumber,
-          phone,
-          date_of_birth: dateOfBirth,
-          region_id: regionId,
-          role: 'voter',
-          approval_status: 'pending',
-        },
+  const { data, error } = await withTimeout(supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: appUrl('/verify-email'),
+      data: {
+        full_name: fullName,
+        voter_number: voterNumber,
+        phone,
+        date_of_birth: dateOfBirth,
+        region_id: regionId,
+        role: 'voter',
+        approval_status: 'pending',
       },
-    }));
+    },
+  }));
 
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    if (isRecoverableSignupError(error)) return createLocalVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId });
-    throw error;
-  }
+  if (error) throw error;
+  return data;
 }
 
 export async function loginWithPassword(email, password) {
-  if (email.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-    return saveLocalSession(adminProfile());
-  }
+  if (!isSupabaseConfigured) {
+    if (email.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      return saveLocalSession(adminProfile());
+    }
 
-  const localAccount = findLocalAccount(email);
-  if (localAccount && localAccount.password === password) {
-    return saveLocalSession(localAccount.profile);
-  }
+    const localAccount = findLocalAccount(email);
+    if (localAccount && localAccount.password === password) {
+      return saveLocalSession(localAccount.profile);
+    }
 
-  if (!isSupabaseConfigured) throw new Error('Invalid email or password.');
+    throw new Error('Invalid email or password.');
+  }
 
   try {
     const { data, error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }));
     if (error) throw error;
     return data;
   } catch (error) {
-    if (isNetworkError(error)) throw new Error('Connection problem. Please use the local demo account created from registration or try again.');
+    if (isNetworkError(error)) throw new Error('Database connection problem. Please resume/check the Supabase project and try again.');
     throw error;
   }
 }

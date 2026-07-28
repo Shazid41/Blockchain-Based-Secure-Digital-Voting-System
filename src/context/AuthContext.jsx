@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
 
     async function loadSession() {
       const localState = getLocalAuthState();
-      if (localState.session?.user) {
+      if (!isSupabaseConfigured && localState.session?.user) {
         setSession(localState.session);
         setProfile(localState.profile);
         setLoading(false);
@@ -45,6 +45,7 @@ export function AuthProvider({ children }) {
     loadSession();
 
     function loadLocalSession() {
+      if (isSupabaseConfigured) return;
       const localState = getLocalAuthState();
       setSession(localState.session);
       setProfile(localState.profile);
@@ -61,7 +62,7 @@ export function AuthProvider({ children }) {
     }
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       const localState = getLocalAuthState();
-      if (localState.session?.user) {
+      if (!isSupabaseConfigured && localState.session?.user) {
         setSession(localState.session);
         setProfile(localState.profile);
         setLoading(false);

@@ -2,6 +2,7 @@ import { BarChart3, CheckCircle2, Fingerprint, LockKeyhole, MailCheck, ShieldChe
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import AlertMessage from '../../components/common/AlertMessage.jsx';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
 import useLanguage from '../../hooks/useLanguage.js';
@@ -22,16 +23,24 @@ const stepKeys = ['processRegister', 'processVerify', 'processApproval', 'proces
 export default function HomePage() {
   const { language, t } = useLanguage();
   const [liveElections, setLiveElections] = useState([]);
+  const [liveError, setLiveError] = useState('');
 
   useEffect(() => {
     let active = true;
-    listPublicElectionDashboard().then((rows) => {
-      if (active) setLiveElections(rows);
-    });
+    const load = () => {
+      listPublicElectionDashboard()
+        .then((rows) => {
+          if (!active) return;
+          setLiveElections(rows);
+          setLiveError('');
+        })
+        .catch((error) => {
+          if (active) setLiveError(error.message);
+        });
+    };
+    load();
     const timer = setInterval(() => {
-      listPublicElectionDashboard().then((rows) => {
-        if (active) setLiveElections(rows);
-      });
+      load();
     }, 30000);
 
     return () => {
@@ -92,9 +101,9 @@ export default function HomePage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-primary-dark">{t('liveElectionHub')}</p>
-                <h2 className="mt-2 text-2xl font-extrabold text-text">{localize(firstElection?.title ?? 'Department Club Election')}</h2>
+                <h2 className="mt-2 text-2xl font-extrabold text-text">{firstElection ? localize(firstElection.title) : 'No live election data yet'}</h2>
               </div>
-              <StatusBadge status={firstElection?.status ?? 'active'} />
+              <StatusBadge status={firstElection?.status ?? 'pending'} />
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border border-white/70 bg-white/70 p-3">
@@ -111,15 +120,21 @@ export default function HomePage() {
               </div>
             </div>
             <div className="mt-5 h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={localizedCandidates}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#D8E0DD" />
-                  <XAxis dataKey="localized_name" tick={{ fontSize: 11 }} interval={0} height={52} />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="vote_count" fill="#006A4E" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {localizedCandidates.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={localizedCandidates}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#D8E0DD" />
+                    <XAxis dataKey="localized_name" tick={{ fontSize: 11 }} interval={0} height={52} />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="vote_count" fill="#006A4E" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border bg-white/60 text-center text-sm font-semibold text-muted">
+                  Live chart will appear after admin creates an active election and votes are stored in Supabase.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -127,6 +142,7 @@ export default function HomePage() {
 
       <section className="container-page py-12">
         <PageHeader title={t('liveElectionHub')} description={t('liveElectionDescription')} />
+        {liveError ? <div className="mt-5"><AlertMessage type="error">Could not load live election data from Supabase. {liveError}</AlertMessage></div> : null}
         <div className="mt-8 grid gap-5 lg:grid-cols-2">
           {liveElections.map((election) => (
             <article key={election.election_id} className="card p-5">

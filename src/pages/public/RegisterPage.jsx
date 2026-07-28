@@ -9,14 +9,14 @@ import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import SelectInput from '../../components/common/SelectInput.jsx';
 import useLanguage from '../../hooks/useLanguage.js';
 import { registerVoter, resendSignupVerification } from '../../services/authService.js';
-import { demoApprovedNids } from '../../services/nidService.js';
+import { checkNidForSignup } from '../../services/nidService.js';
 import { listRegions } from '../../services/regionService.js';
 import { isStrongPassword, isValidEmail, isValidVoterNumber } from '../../utils/validation.js';
 
 function friendlyRegisterError(error) {
   const raw = String(error?.message || error || '');
   const message = raw.toLowerCase();
-  if (message.includes('approved nid')) return 'This NID is not approved for registration. Please use one of the demo NID numbers or ask admin to add it.';
+  if (message.includes('approved nid')) return 'This NID is not approved for registration. Please ask admin to add it in the live NID list.';
   if (message.includes('already registered') || message.includes('duplicate') || message.includes('already been registered')) return 'This email or NID is already used.';
   if (message.includes('failed to fetch') || message.includes('network') || message.includes('timeout')) return 'Connection problem. Please try again in a moment. Your form information is still here.';
   if (message.includes('invalid input syntax') && message.includes('uuid')) return 'Please select a valid region before submitting.';
@@ -95,9 +95,15 @@ export default function RegisterPage() {
       return;
     }
     if (step === 1) {
-      const locallyApproved = demoApprovedNids.some((row) => row.nid === form.voterNumber && row.is_active);
-      if (!locallyApproved) {
-        setError('Use one of the approved demo NID numbers. Admin can add more NIDs from the admin panel.');
+      let approved = false;
+      try {
+        approved = await checkNidForSignup(form.voterNumber);
+      } catch (nidError) {
+        setError(`Could not check this NID against the live database. ${nidError.message}`);
+        return;
+      }
+      if (!approved) {
+        setError('This NID is not approved or is already registered. Admin can add more NIDs from the admin panel.');
         return;
       }
     }

@@ -14,9 +14,12 @@ export async function listCandidates(filters = {}) {
 
 export async function saveCandidate(candidate) {
   if (!isSupabaseConfigured) return { ...candidate, id: candidate.id ?? crypto.randomUUID() };
-  const query = candidate.id
-    ? supabase.from('candidates').update(candidate).eq('id', candidate.id)
-    : supabase.from('candidates').insert(candidate);
+  const { id, created_at: _createdAt, updated_at: _updatedAt, ...payload } = candidate;
+  delete payload.elections;
+  delete payload.regions;
+  const query = id
+    ? supabase.from('candidates').update(payload).eq('id', id)
+    : supabase.from('candidates').insert(payload);
   const { data, error } = await query.select().single();
   if (error) throw error;
   return data;

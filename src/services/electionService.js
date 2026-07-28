@@ -15,9 +15,11 @@ export async function getElection(id) {
 
 export async function saveElection(election) {
   if (!isSupabaseConfigured) return { ...election, id: election.id ?? crypto.randomUUID() };
-  const query = election.id
-    ? supabase.from('elections').update(election).eq('id', election.id)
-    : supabase.from('elections').insert(election);
+  const { id, created_at: _createdAt, updated_at: _updatedAt, ...payload } = election;
+  delete payload.regions;
+  const query = id
+    ? supabase.from('elections').update(payload).eq('id', id)
+    : supabase.from('elections').insert(payload);
   const { data, error } = await query.select().single();
   if (error) throw error;
   return data;

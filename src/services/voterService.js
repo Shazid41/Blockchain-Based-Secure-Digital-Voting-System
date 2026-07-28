@@ -8,7 +8,7 @@ function mergedDemoVoters() {
   return [...localVoters, ...demoVoters.filter((voter) => !localIds.has(voter.id))];
 }
 
-function withTimeout(promise, milliseconds = 900) {
+function withTimeout(promise, milliseconds = 4000) {
   let timeoutId;
   const timeout = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error('Voter request timed out')), milliseconds);
@@ -19,17 +19,11 @@ function withTimeout(promise, milliseconds = 900) {
 
 export async function listVoters() {
   if (!isSupabaseConfigured) return mergedDemoVoters();
-  try {
-    const { data, error } = await withTimeout(
-      supabase.from('profiles').select('*, regions(name)').eq('role', 'voter').order('created_at', { ascending: false }),
-    );
-    if (error) throw error;
-    const localVoters = listLocalVoterProfiles();
-    const remoteIds = new Set((data ?? []).map((voter) => voter.id));
-    return [...localVoters.filter((voter) => !remoteIds.has(voter.id)), ...(data ?? [])];
-  } catch {
-    return mergedDemoVoters();
-  }
+  const { data, error } = await withTimeout(
+    supabase.from('profiles').select('*, regions(name)').eq('role', 'voter').order('created_at', { ascending: false }),
+  );
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function updateVoterStatus(id, approvalStatus) {
@@ -39,11 +33,7 @@ export async function updateVoterStatus(id, approvalStatus) {
   const demoVoter = demoVoters.find((voter) => voter.id === id);
   if (!isSupabaseConfigured || demoVoter) return { ...(demoVoter ?? { id }), approval_status: approvalStatus };
 
-  try {
-    const { data, error } = await withTimeout(supabase.from('profiles').update({ approval_status: approvalStatus }).eq('id', id).select().single());
-    if (error) throw error;
-    return data;
-  } catch {
-    return { id, approval_status: approvalStatus };
-  }
+  const { data, error } = await withTimeout(supabase.from('profiles').update({ approval_status: approvalStatus }).eq('id', id).select().single());
+  if (error) throw error;
+  return data;
 }

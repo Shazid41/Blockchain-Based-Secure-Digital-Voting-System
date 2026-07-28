@@ -50,19 +50,15 @@ export async function listPublicElectionDashboard() {
   if (!isSupabaseConfigured) return demoSnapshots();
 
   let data;
-  try {
-    const response = await supabase.rpc('public_live_election_dashboard');
-    if (response.error) return demoSnapshots();
-    data = response.data;
-  } catch {
-    return demoSnapshots();
-  }
-  if (!data?.length) return demoSnapshots();
+  const response = await supabase.rpc('public_live_election_dashboard');
+  if (response.error) throw response.error;
+  data = response.data;
+  if (!data?.length) return [];
 
   const snapshots = data.map((row) => ({
     ...row,
     candidates: Array.isArray(row.candidates) ? row.candidates : [],
     time_left: hoursLeft(row.end_time),
   }));
-  return snapshots.some((row) => row.candidates.length > 0 && Number(row.total_votes) > 0) ? snapshots : demoSnapshots();
+  return snapshots;
 }

@@ -5,7 +5,7 @@ function fallbackRegions() {
   return demoRegions.map((region) => ({ ...region, isFallback: true }));
 }
 
-function withTimeout(promise, milliseconds = 900) {
+function withTimeout(promise, milliseconds = 4000) {
   let timeoutId;
   const timeout = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error('Region request timed out')), milliseconds);
@@ -19,10 +19,9 @@ export async function listRegions() {
   try {
     const { data, error } = await withTimeout(supabase.from('regions').select('*').order('name'));
     if (error) throw error;
-    return data?.length ? data : fallbackRegions();
+    return data ?? [];
   } catch (error) {
-    console.warn('Could not load regions from Supabase. Using fallback registration regions.', error);
-    return fallbackRegions();
+    throw new Error(`Could not load live regions from Supabase: ${error.message}`);
   }
 }
 
