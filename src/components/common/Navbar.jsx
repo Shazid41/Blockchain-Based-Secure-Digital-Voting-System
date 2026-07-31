@@ -1,4 +1,4 @@
-import { Menu, ShieldCheck, X } from 'lucide-react';
+import { LayoutDashboard, Menu, ShieldCheck, UserRoundCheck, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth.js';
@@ -18,6 +18,10 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { isAuthenticated, profile } = useAuth();
   const { t } = useLanguage();
+  const isAdmin = profile?.role === 'admin';
+  const portalPath = isAdmin ? '/admin' : '/voter';
+  const portalLabel = isAdmin ? 'Admin Portal' : 'Voter Portal';
+  const PortalIcon = isAdmin ? LayoutDashboard : UserRoundCheck;
 
   const linkClass = ({ isActive }) =>
     `focus-ring nav-pill whitespace-nowrap ${
@@ -49,13 +53,23 @@ export default function Navbar() {
           <LanguageSwitcher />
           <Link
             className="focus-ring inline-flex min-h-12 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-[#16834A] px-5 py-2 text-sm font-extrabold text-white shadow-soft transition duration-200 hover:-translate-y-0.5 hover:shadow-glow"
-            to={isAuthenticated ? (profile?.role === 'admin' ? '/admin' : '/voter') : '/login'}
+            to={isAuthenticated ? portalPath : '/login'}
           >
-            {isAuthenticated ? t('profile') : t('login')}
+            {isAuthenticated ? (
+              <>
+                <PortalIcon size={17} aria-hidden="true" /> {portalLabel}
+              </>
+            ) : t('login')}
           </Link>
-          <Link className="focus-ring rounded-lg px-3 py-2 text-sm font-extrabold leading-5 text-primary transition duration-200 hover:-translate-y-0.5 hover:bg-primary-light hover:shadow-sm" to="/admin-login">
-            {t('adminLogin')}
-          </Link>
+          {isAuthenticated ? (
+            <Link className="focus-ring rounded-lg px-3 py-2 text-sm font-extrabold leading-5 text-primary transition duration-200 hover:-translate-y-0.5 hover:bg-primary-light hover:shadow-sm" to={isAdmin ? '/voter' : '/verify'}>
+              {isAdmin ? 'Voter View' : 'Public Verify'}
+            </Link>
+          ) : (
+            <Link className="focus-ring rounded-lg px-3 py-2 text-sm font-extrabold leading-5 text-primary transition duration-200 hover:-translate-y-0.5 hover:bg-primary-light hover:shadow-sm" to="/admin-login">
+              {t('adminLogin')}
+            </Link>
+          )}
         </div>
 
         <button
@@ -79,12 +93,25 @@ export default function Navbar() {
                 {t(item.key)}
               </NavLink>
             ))}
-            <Link className="focus-ring rounded bg-primary px-4 py-3 text-center font-semibold text-white" to="/login" onClick={() => setOpen(false)}>
-              {t('voterLogin')}
-            </Link>
-            <Link className="focus-ring rounded border border-primary px-4 py-3 text-center font-semibold text-primary" to="/admin-login" onClick={() => setOpen(false)}>
-              {t('adminLogin')}
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link className="focus-ring inline-flex items-center justify-center gap-2 rounded bg-primary px-4 py-3 text-center font-semibold text-white" to={portalPath} onClick={() => setOpen(false)}>
+                  <PortalIcon size={18} aria-hidden="true" /> {portalLabel}
+                </Link>
+                <Link className="focus-ring rounded border border-primary px-4 py-3 text-center font-semibold text-primary" to={isAdmin ? '/voter' : '/verify'} onClick={() => setOpen(false)}>
+                  {isAdmin ? 'Voter View' : 'Public Verify'}
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link className="focus-ring rounded bg-primary px-4 py-3 text-center font-semibold text-white" to="/login" onClick={() => setOpen(false)}>
+                  {t('voterLogin')}
+                </Link>
+                <Link className="focus-ring rounded border border-primary px-4 py-3 text-center font-semibold text-primary" to="/admin-login" onClick={() => setOpen(false)}>
+                  {t('adminLogin')}
+                </Link>
+              </>
+            )}
           </div>
         </div>
       ) : null}
