@@ -1,19 +1,19 @@
 import { demoBallots, demoCandidates, demoEligibility } from './demoData.js';
 import { isFirebaseConfigured } from './firebaseClient.js';
-import { listFirebaseBallots, listFirebaseCandidates, listFirebaseEligibility } from './firebaseStore.js';
+import { listFirebaseCandidates, listFirebaseEligibility, listFirebaseVoteBlocks } from './firebaseStore.js';
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 export async function getElectionResults(electionId) {
   if (isFirebaseConfigured) {
-    const [candidates, ballots, eligibilityRows] = await Promise.all([
+    const [candidates, voteBlocks, eligibilityRows] = await Promise.all([
       listFirebaseCandidates({ electionId }),
-      listFirebaseBallots({ electionId }),
+      listFirebaseVoteBlocks({ electionId }),
       listFirebaseEligibility({ electionId }),
     ]);
     const eligible = eligibilityRows.filter((row) => row.election_id === electionId && row.is_eligible);
-    const totalVotes = ballots.length;
+    const totalVotes = voteBlocks.length;
     return candidates.map((candidate) => {
-      const voteCount = ballots.filter((ballot) => ballot.candidate_id === candidate.id).length;
+      const voteCount = voteBlocks.filter((block) => block.candidate_id === candidate.id).length;
       return {
         election_id: electionId,
         candidate_id: candidate.id,

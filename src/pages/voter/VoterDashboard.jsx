@@ -1,5 +1,5 @@
 import { CheckCircle2, Clock, FileCheck2, Vote } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AlertMessage from '../../components/common/AlertMessage.jsx';
 import PageHeader from '../../components/common/PageHeader.jsx';
@@ -40,6 +40,11 @@ export default function VoterDashboard() {
   const upcoming = elections.filter((election) => election.status === 'scheduled');
   const completedVotes = eligibilityRows.filter((item) => item.has_voted).length;
   const eligibilityFor = useMemo(() => new Map(eligibilityRows.map((row) => [row.election_id, row])), [eligibilityRows]);
+  const accessFor = useCallback((election) => eligibilityFor.get(election.id) ?? {
+    election_id: election.id,
+    is_eligible: currentProfile.approval_status === 'approved' && election.status === 'active',
+    has_voted: false,
+  }, [currentProfile.approval_status, eligibilityFor]);
 
   const nextAction = !verified
     ? 'Verify your email'
@@ -53,7 +58,7 @@ export default function VoterDashboard() {
     <>
       <PageHeader eyebrow="Voter" title="Dashboard" description="Your voting status, available elections, and next action are shown here." />
       <section className="container-page space-y-8 py-8">
-        {error ? <AlertMessage type="error">Could not load live voter data from Supabase. {error}</AlertMessage> : null}
+        {error ? <AlertMessage type="error">Could not load live voter data from the database. {error}</AlertMessage> : null}
         <AlertMessage type={currentProfile.approval_status === 'approved' ? 'success' : 'warning'} title="Next action">
           {nextAction}. Your current approval status is {currentProfile.approval_status}.
         </AlertMessage>
@@ -65,11 +70,11 @@ export default function VoterDashboard() {
         </div>
         <section>
           <h2 className="text-2xl font-bold text-text">Active Elections</h2>
-          <div className="mt-4 grid gap-4">{active.map((election) => <ElectionCard key={election.id} election={election} eligibility={eligibilityFor.get(election.id)} />)}</div>
+          <div className="mt-4 grid gap-4">{active.map((election) => <ElectionCard key={election.id} election={election} eligibility={accessFor(election)} />)}</div>
         </section>
         <section>
           <h2 className="text-2xl font-bold text-text">Upcoming Elections</h2>
-          <div className="mt-4 grid gap-4">{upcoming.map((election) => <ElectionCard key={election.id} election={election} eligibility={eligibilityFor.get(election.id)} />)}</div>
+          <div className="mt-4 grid gap-4">{upcoming.map((election) => <ElectionCard key={election.id} election={election} eligibility={accessFor(election)} />)}</div>
         </section>
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="card p-5">

@@ -15,7 +15,7 @@ import { castSecureVote } from '../../services/votingService.js';
 export default function CastVotePage() {
   const { electionId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { profile, user } = useAuth();
   const [election, setElection] = useState(null);
   const [candidates, setCandidates] = useState([]);
   const [eligibility, setEligibility] = useState(null);
@@ -40,6 +40,8 @@ export default function CastVotePage() {
 
   if (!election && !error) return <PageHeader title="Loading election" description="Loading live election data." />;
   if (!election) return <PageHeader title="Election not found" description="The selected election does not exist in the live database." />;
+  const canVote = profile?.approval_status === 'approved' && election.status === 'active' && !eligibility?.has_voted;
+  const eligibilityLabel = canVote || eligibility?.is_eligible ? 'Eligible' : 'Not eligible';
 
   async function submitVote() {
     setError('');
@@ -64,10 +66,12 @@ export default function CastVotePage() {
           <p><strong>Schedule:</strong> {new Date(election.start_time).toLocaleString()} to {new Date(election.end_time).toLocaleString()}</p>
           <p><strong>Region:</strong> {election.regions?.name ?? 'All regions'}</p>
           <p><strong>Status:</strong> <StatusBadge status={election.status} /></p>
-          <p><strong>Eligibility:</strong> {eligibility?.is_eligible ? 'Eligible' : 'Not eligible'}</p>
+          <p><strong>Eligibility:</strong> {eligibilityLabel}</p>
         </div>
-        <AlertMessage type="info" title="Voting rules">
-          You must be authenticated, email verified, approved, eligible, in the correct region, and you may vote only once.
+        <AlertMessage type={canVote ? 'info' : 'warning'} title="Voting rules">
+          {canVote
+            ? 'Select one candidate. Your anonymous ballot and public blockchain receipt will update live results.'
+            : 'Your voter account must be approved by admin before you can submit a vote.'}
         </AlertMessage>
         <div className="grid gap-4 lg:grid-cols-2">
           {candidates.map((candidate) => {
@@ -94,7 +98,7 @@ export default function CastVotePage() {
             <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
             I understand that my vote cannot be changed after submission.
           </label>
-          <PrimaryButton disabled={!selectedCandidate || !confirmed || submitting} onClick={() => setModalOpen(true)}>
+          <PrimaryButton disabled={!canVote || !selectedCandidate || !confirmed || submitting} onClick={() => setModalOpen(true)}>
             {submitting ? 'Submitting...' : 'Submit Vote'}
           </PrimaryButton>
         </div>

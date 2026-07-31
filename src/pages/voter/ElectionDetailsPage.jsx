@@ -12,7 +12,7 @@ import { listEligibilityForVoter } from '../../services/eligibilityService.js';
 
 export default function ElectionDetailsPage() {
   const { electionId } = useParams();
-  const { user } = useAuth();
+  const { profile, user } = useAuth();
   const [election, setElection] = useState(null);
   const [candidates, setCandidates] = useState([]);
   const [eligibility, setEligibility] = useState(null);
@@ -33,6 +33,8 @@ export default function ElectionDetailsPage() {
   }, [electionId, user?.id]);
 
   if (loaded && !election) return <PageHeader title="Election not found" description="The selected election does not exist in the live database." />;
+  const canVote = profile?.approval_status === 'approved' && election?.status === 'active' && !eligibility?.has_voted;
+  const eligibilityLabel = canVote || eligibility?.is_eligible ? 'Eligible' : 'Not eligible yet';
 
   return (
     <>
@@ -44,19 +46,23 @@ export default function ElectionDetailsPage() {
           <p><strong>Region:</strong> {election?.regions?.name ?? 'All regions'}</p>
           <p><strong>Start:</strong> {election?.start_time ? new Date(election.start_time).toLocaleString() : 'Loading'}</p>
           <p><strong>End:</strong> {election?.end_time ? new Date(election.end_time).toLocaleString() : 'Loading'}</p>
-          <p><strong>Eligibility:</strong> {eligibility?.is_eligible ? 'Eligible' : 'Not eligible yet'}</p>
+          <p><strong>Eligibility:</strong> {eligibilityLabel}</p>
           <p><strong>Voting status:</strong> {eligibility?.has_voted ? 'Completed' : 'Not voted'}</p>
         </div>
         <AlertMessage type="info" title="Voting security notice">
-          Vote casting uses the live secure vote RPC and stores receipts in Supabase.
+          Vote casting stores an anonymous ballot and public blockchain receipt in Firebase.
         </AlertMessage>
         <section>
           <h2 className="text-2xl font-bold text-text">Candidates</h2>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">{candidates.map((candidate) => <CandidateCard key={candidate.id} candidate={candidate} />)}</div>
         </section>
-        <PrimaryButton disabled={!eligibility?.is_eligible || eligibility?.has_voted || election?.status !== 'active'}>
-          <Link to={`/voter/elections/${election?.id}/vote`}>Vote Now</Link>
-        </PrimaryButton>
+        {canVote ? (
+          <Link className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary via-[#0B7A59] to-[#16834A] px-5 py-3 text-sm font-bold text-white shadow-soft transition duration-200 hover:-translate-y-1 hover:shadow-glow" to={`/voter/elections/${election?.id}/vote`}>
+            Vote Now
+          </Link>
+        ) : (
+          <PrimaryButton disabled>Vote Now</PrimaryButton>
+        )}
         <Link className="block font-semibold text-primary" to="/voter/elections">Back to elections</Link>
       </section>
     </>

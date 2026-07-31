@@ -194,6 +194,22 @@ export async function listFirebaseVoters() {
 export async function updateFirebaseVoterStatus(id, approvalStatus) {
   requireFirebase();
   await updateDoc(doc(firebaseDb, 'profiles', id), { approval_status: approvalStatus, updated_at: serverTimestamp() });
+  if (approvalStatus === 'approved') {
+    const elections = await listFirebaseElections();
+    await Promise.all(elections
+      .filter((election) => ['active', 'scheduled'].includes(election.status))
+      .map((election) => {
+        const eligibilityId = `${id}_${election.id}`;
+        return setDoc(doc(firebaseDb, 'voter_eligibility', eligibilityId), {
+          id: eligibilityId,
+          voter_id: id,
+          election_id: election.id,
+          is_eligible: true,
+          updated_at: serverTimestamp(),
+          created_at: serverTimestamp(),
+        }, { merge: true });
+      }));
+  }
   return getFirebaseProfile(id);
 }
 
@@ -229,6 +245,11 @@ export async function listFirebaseBallots(filters = {}) {
   return ballots.filter((ballot) => !filters.electionId || ballot.election_id === filters.electionId);
 }
 
+export async function listFirebaseVoteBlocks(filters = {}) {
+  const blocks = await listCollection('vote_blocks');
+  return blocks.filter((block) => !filters.electionId || block.election_id === filters.electionId);
+}
+
 export async function saveFirebaseCandidate(candidate) {
   requireFirebase();
   const id = candidate.id || crypto.randomUUID();
@@ -257,32 +278,39 @@ export async function setFirebaseEligibility(row) {
 
 export async function castFirebaseVote({ voterId, electionId, candidateId }) {
   requireFirebase();
-  const eligibilityId = `${voterId}_${electionId}`;
-  const eligibilityRef = doc(firebaseDb, 'voter_eligibility', eligibilityId);
+  const anonymousVoterHash = await sha256Hex(`${voterId}:${electionId}:secure-voting`);
+  const voteDocumentId = `${electionId}_${anonymousVoterHash}`;
+  const profileRef = doc(firebaseDb, 'profiles', voterId);
   const electionRef = doc(firebaseDb, 'elections', electionId);
   const candidateRef = doc(firebaseDb, 'candidates', candidateId);
-  const ballotRef = doc(collection(firebaseDb, 'ballots'));
-  const blockRef = doc(collection(firebaseDb, 'vote_blocks'));
+  const ballotRef = doc(firebaseDb, 'ballots', voteDocumentId);
+  const blockRef = doc(firebaseDb, 'vote_blocks', voteDocumentId);
   const castAt = new Date().toISOString();
   const receiptHash = await sha256Hex(`${voterId}:${electionId}:${candidateId}:${castAt}:${crypto.randomUUID()}`);
 
-  await runTransaction(firebaseDb, async (transaction) => {
-    const [eligibilitySnapshot, electionSnapshot, candidateSnapshot] = await Promise.all([
-      transaction.get(eligibilityRef),
-      transaction.get(electionRef),
-      transaction.get(candidateRef),
-    ]);
-    const eligibility = eligibilitySnapshot.data();
-    const election = electionSnapshot.data();
-    const candidate = candidateSnapshot.data();
-    if (!eligibility?.is_eligible) throw new Error('You are not eligible for this election.');
-    if (eligibility.has_voted) throw new Error('You have already voted in this election.');
-    if (!election || election.status !== 'active') throw new Error('Election is not active.');
-    if (!candidate || candidate.election_id !== electionId || candidate.is_active === false) throw new Error('Candidate is not valid.');
-    transaction.set(ballotRef, { id: ballotRef.id, election_id: electionId, candidate_id: candidateId, receipt_hash: receiptHash, cast_at: serverTimestamp() });
-    transaction.set(blockRef, { id: blockRef.id, ballot_id: ballotRef.id, election_id: electionId, block_index: Date.now(), previous_hash: '0'.repeat(64), current_hash: receiptHash, created_at: serverTimestamp() });
-    transaction.update(eligibilityRef, { has_voted: true, voted_at: serverTimestamp() });
-  });
+  try {
+    await runTransaction(firebaseDb, async (transaction) => {
+      const [profileSnapshot, electionSnapshot, candidateSnapshot] = await Promise.all([
+        transaction.get(profileRef),
+        transaction.get(electionRef),
+        transaction.get(candidateRef),
+      ]);
+      const profile = profileSnapshot.data();
+      const election = electionSnapshot.data();
+      const candidate = candidateSnapshot.data();
+      if (!profile || profile.approval_status !== 'approved') throw new Error('Your voter account must be approved before voting.');
+      if (!election || election.status !== 'active') throw new Error('Election is not active.');
+      if (!candidate || candidate.election_id !== electionId || candidate.is_active === false) throw new Error('Candidate is not valid.');
+      transaction.set(ballotRef, { id: ballotRef.id, election_id: electionId, candidate_id: candidateId, anonymous_voter_hash: anonymousVoterHash, receipt_hash: receiptHash, cast_at: serverTimestamp() });
+      transaction.set(blockRef, { id: blockRef.id, ballot_id: ballotRef.id, election_id: electionId, candidate_id: candidateId, block_index: Date.now(), previous_hash: '0'.repeat(64), current_hash: receiptHash, anonymous_voter_hash: anonymousVoterHash, created_at: serverTimestamp() });
+    });
+  } catch (error) {
+    const message = String(error?.message || '').toLowerCase();
+    if (message.includes('permission') || message.includes('already exists')) {
+      throw new Error('You have already voted in this election, or this vote receipt already exists.');
+    }
+    throw error;
+  }
 
   const election = fromDoc(await getDoc(electionRef));
   return {
@@ -295,17 +323,17 @@ export async function castFirebaseVote({ voterId, electionId, candidateId }) {
 }
 
 export async function listFirebasePublicDashboard() {
-  const [elections, candidates, ballots, regions] = await Promise.all([
+  const [elections, candidates, voteBlocks, regions] = await Promise.all([
     listFirebaseElections(),
     listFirebaseCandidates(),
-    listCollection('ballots'),
+    listFirebaseVoteBlocks(),
     listFirebaseRegions(),
   ]);
   return elections
     .filter((election) => election.status === 'active' && election.result_visibility === 'live')
     .map((election) => {
       const rows = candidates.filter((candidate) => candidate.election_id === election.id && candidate.is_active !== false).map((candidate) => {
-        const voteCount = ballots.filter((ballot) => ballot.candidate_id === candidate.id).length;
+        const voteCount = voteBlocks.filter((block) => block.candidate_id === candidate.id).length;
         return { candidate_id: candidate.id, candidate_name: candidate.full_name, party_name: candidate.party_name, vote_count: voteCount };
       });
       const totalVotes = rows.reduce((sum, row) => sum + row.vote_count, 0);
