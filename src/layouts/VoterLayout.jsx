@@ -11,13 +11,6 @@ const voterLinks = [
   ['Vote Verification', '/voter/verify'],
 ];
 
-const websiteLinks = [
-  ['Home', '/'],
-  ['How It Works', '/how-it-works'],
-  ['Security', '/security'],
-  ['Help', '/about'],
-];
-
 export default function VoterLayout() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -32,8 +25,8 @@ export default function VoterLayout() {
   const navClass = ({ isActive }) =>
     `focus-ring inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition ${isActive ? 'bg-gradient-to-r from-primary to-[#16834A] text-white shadow-soft' : 'text-muted hover:-translate-y-0.5 hover:bg-primary-light hover:text-primary'}`;
 
-  const quickLinkClass = ({ isActive }) =>
-    `focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-extrabold transition duration-200 ${isActive ? 'bg-primary-light text-primary shadow-sm' : 'text-muted hover:-translate-y-0.5 hover:bg-white/80 hover:text-primary hover:shadow-sm'}`;
+  const quickLinkClass =
+    'focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-primary/15 bg-white/75 px-3 py-2 text-sm font-extrabold text-primary shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-primary-light hover:shadow-soft';
 
   return (
     <div className="page-shell min-h-screen bg-page">
@@ -47,7 +40,9 @@ export default function VoterLayout() {
           </nav>
           <nav className="hidden items-center gap-1 xl:flex">
             <span className="mx-1 h-8 w-px bg-border" aria-hidden="true" />
-            {websiteLinks.map(([label, to]) => <NavLink key={to} to={to} end={to === '/'} className={quickLinkClass}>{label}</NavLink>)}
+            <Link to="/" className={quickLinkClass}>
+              <Home size={16} aria-hidden="true" /> Website
+            </Link>
           </nav>
           <div className="hidden items-center gap-3 lg:flex">
             <StatusBadge status={currentProfile.approval_status ?? 'pending'} />

@@ -8,7 +8,7 @@ import {
   signOut as firebaseSignOut,
   updatePassword as updateFirebasePassword,
 } from 'firebase/auth';
-import { firebaseAuth, isFirebaseConfigured } from './firebaseClient.js';
+import { firebaseAuth, firebaseAuthReady, isFirebaseConfigured } from './firebaseClient.js';
 import { ensureFirebaseSeed, getFirebaseProfile, upsertFirebaseProfile } from './firebaseStore.js';
 import { isDemoNidApproved } from './nidService.js';
 
@@ -125,6 +125,11 @@ export function getLocalAuthState() {
   return readJson(LOCAL_SESSION_KEY, { session: null, profile: null });
 }
 
+export function saveAuthState(session, profile) {
+  writeJson(LOCAL_SESSION_KEY, { session, profile });
+  window.dispatchEvent(new Event('secure-voting-auth-change'));
+}
+
 function getLocalAccounts() {
   return readJson(LOCAL_ACCOUNTS_KEY, []);
 }
@@ -203,6 +208,7 @@ function loginLocalAccount(email, password) {
 
 export async function registerVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId }) {
   if (isFirebaseConfigured) {
+    await firebaseAuthReady;
     const { user } = await withTimeout(createUserWithEmailAndPassword(firebaseAuth, email, password), 10000);
     let profile;
     try {
@@ -220,7 +226,9 @@ export async function registerVoter({ email, password, fullName, voterNumber, ph
     } catch {
       // Firebase account/profile is already live; users can still login and admins can approve.
     }
-    return { user: normalizeFirebaseUser(user), session: firebaseSession(user), profile, firebase: true };
+    const session = firebaseSession(user);
+    saveAuthState(session, profile);
+    return { user: normalizeFirebaseUser(user), session, profile, firebase: true };
   }
 
   if (!isSupabaseConfigured) return createLocalVoter({ email, password, fullName, voterNumber, phone, dateOfBirth, regionId });
@@ -255,18 +263,23 @@ export async function registerVoter({ email, password, fullName, voterNumber, ph
 
 export async function loginWithPassword(email, password) {
   if (isFirebaseConfigured) {
+    await firebaseAuthReady;
     try {
       const { user } = await withTimeout(signInWithEmailAndPassword(firebaseAuth, email, password), 10000);
       const profile = (await getFirebaseProfile(user.uid)) ?? (await upsertFirebaseProfile(user, { email }));
       if (profile?.role === 'admin') await ensureFirebaseSeed();
-      return { user: normalizeFirebaseUser(user), session: firebaseSession(user), profile, firebase: true };
+      const session = firebaseSession(user);
+      saveAuthState(session, profile);
+      return { user: normalizeFirebaseUser(user), session, profile, firebase: true };
     } catch (error) {
       const code = String(error?.code ?? '');
       if (email.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD && code.includes('user-not-found')) {
         const { user } = await createUserWithEmailAndPassword(firebaseAuth, email, password);
         const profile = await upsertFirebaseProfile(user, { email });
         await ensureFirebaseSeed();
-        return { user: normalizeFirebaseUser(user), session: firebaseSession(user), profile, firebase: true };
+        const session = firebaseSession(user);
+        saveAuthState(session, profile);
+        return { user: normalizeFirebaseUser(user), session, profile, firebase: true };
       }
       throw error;
     }

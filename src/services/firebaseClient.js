@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -22,6 +22,9 @@ export const isFirebaseConfigured = Boolean(
 
 export const firebaseApp = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 export const firebaseAuth = firebaseApp ? getAuth(firebaseApp) : null;
+export const firebaseAuthReady = firebaseAuth
+  ? setPersistence(firebaseAuth, browserLocalPersistence).catch(() => null)
+  : Promise.resolve(null);
 export const firebaseDb = firebaseApp ? getFirestore(firebaseApp) : null;
 
 export const backendName = isFirebaseConfigured ? 'Firebase' : 'Supabase';

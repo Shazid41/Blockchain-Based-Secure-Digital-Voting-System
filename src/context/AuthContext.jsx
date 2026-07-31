@@ -1,7 +1,7 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { getLocalAuthState, getProfile, logout as logoutUser } from '../services/authService.js';
-import { firebaseAuth, isFirebaseConfigured } from '../services/firebaseClient.js';
+import { getLocalAuthState, getProfile, logout as logoutUser, saveAuthState } from '../services/authService.js';
+import { firebaseAuth, firebaseAuthReady, isFirebaseConfigured } from '../services/firebaseClient.js';
 import { isSupabaseConfigured, supabase } from '../services/supabaseClient.js';
 
 export const AuthContext = createContext(null);
@@ -91,24 +91,39 @@ export function AuthProvider({ children }) {
     window.addEventListener('secure-voting-auth-change', loadLocalSession);
 
     if (isFirebaseConfigured) {
+      const cachedState = getLocalAuthState();
+      if (cachedState.session?.user) {
+        setSession(cachedState.session);
+        setProfile(cachedState.profile);
+        setLoading(false);
+      }
+
       const timer = setTimeout(() => {
         if (!active) return;
-        setSession(null);
-        setProfile(null);
+        const latestCachedState = getLocalAuthState();
+        setSession(latestCachedState.session ?? null);
+        setProfile(latestCachedState.profile ?? null);
         setLoading(false);
       }, 7000);
 
-      const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+      let unsubscribe = () => {};
+      firebaseAuthReady.finally(() => {
+        if (!active) return;
+        unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
         if (!active) return;
         clearTimeout(timer);
         const nextSession = firebaseSession(user);
-        setSession(nextSession);
+          const latestCachedState = getLocalAuthState();
+          setSession(nextSession ?? latestCachedState.session ?? null);
         try {
-          setProfile(user?.uid ? await withTimeout(getProfile(user.uid), 7000) : null);
+            const nextProfile = user?.uid ? await withTimeout(getProfile(user.uid), 7000) : null;
+            setProfile(nextProfile ?? latestCachedState.profile ?? null);
+            if (nextSession && nextProfile) saveAuthState(nextSession, nextProfile);
         } catch {
-          setProfile(null);
+            setProfile(latestCachedState.profile ?? null);
         }
         setLoading(false);
+      });
       });
 
       return () => {
