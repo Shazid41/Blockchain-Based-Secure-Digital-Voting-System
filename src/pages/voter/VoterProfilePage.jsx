@@ -11,6 +11,7 @@ import StatusBadge from '../../components/common/StatusBadge.jsx';
 import useAuth from '../../hooks/useAuth.js';
 import { listRegions } from '../../services/regionService.js';
 import { getCurrentProfile, updateCurrentProfile } from '../../services/profileService.js';
+import { disableTwoFactor, enableTwoFactor } from '../../services/twoFactorService.js';
 import { listVoterReceipts } from '../../services/verificationService.js';
 import { downloadVoteReceipt } from '../../utils/receiptDownload.js';
 
@@ -22,6 +23,8 @@ export default function VoterProfilePage() {
   const [receipts, setReceipts] = useState([]);
   const [message, setMessage] = useState('');
   const [receiptError, setReceiptError] = useState('');
+  const [twoFactorPin, setTwoFactorPin] = useState('');
+  const [twoFactorBusy, setTwoFactorBusy] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -47,6 +50,36 @@ export default function VoterProfilePage() {
     navigate('/login');
   }
 
+  async function enableSecurityCode() {
+    setMessage('');
+    setTwoFactorBusy(true);
+    try {
+      const saved = await enableTwoFactor(user?.id, twoFactorPin);
+      setProfile(saved);
+      setTwoFactorPin('');
+      setMessage('2FA enabled. Future logins will require this 6 digit code.');
+    } catch (twoFactorError) {
+      setMessage(twoFactorError.message || '2FA setup failed.');
+    } finally {
+      setTwoFactorBusy(false);
+    }
+  }
+
+  async function disableSecurityCode() {
+    setMessage('');
+    setTwoFactorBusy(true);
+    try {
+      const saved = await disableTwoFactor(user?.id);
+      setProfile(saved);
+      setTwoFactorPin('');
+      setMessage('2FA disabled for this account.');
+    } catch (twoFactorError) {
+      setMessage(twoFactorError.message || '2FA could not be disabled.');
+    } finally {
+      setTwoFactorBusy(false);
+    }
+  }
+
   return (
     <>
       <PageHeader eyebrow="Voter" title="Profile" description="Only safe personal fields can be updated by voters." />
@@ -65,6 +98,41 @@ export default function VoterProfilePage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="card bg-page p-4"><p className="text-sm text-muted">Role</p><p className="font-bold text-text">{profile.role}</p></div>
               <div className="card bg-page p-4"><p className="text-sm text-muted">Approval Status</p><div className="mt-2"><StatusBadge status={profile.approval_status} /></div></div>
+            </div>
+            <div className="rounded-xl border border-primary/15 bg-gradient-to-r from-primary-light to-white p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-extrabold uppercase tracking-wide text-primary">2FA Authentication</p>
+                  <p className="mt-1 text-sm text-muted">
+                    Status: <strong className="text-text">{profile.two_factor_enabled ? 'Enabled' : 'Disabled'}</strong>
+                  </p>
+                </div>
+                <StatusBadge status={profile.two_factor_enabled ? 'verified' : 'pending'} />
+              </div>
+              {!profile.two_factor_enabled ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <FormInput
+                    id="twoFactorSetup"
+                    label="Set 6 digit 2FA code"
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={twoFactorPin}
+                    onChange={(event) => setTwoFactorPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="123456"
+                  />
+                  <PrimaryButton type="button" className="self-end" disabled={twoFactorBusy || twoFactorPin.length !== 6} onClick={enableSecurityCode}>
+                    Enable 2FA
+                  </PrimaryButton>
+                </div>
+              ) : (
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <SecondaryButton type="button" disabled={twoFactorBusy} onClick={disableSecurityCode}>
+                    Disable 2FA
+                  </SecondaryButton>
+                  <p className="text-sm leading-6 text-muted">Logout and login again to test the 2FA challenge.</p>
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <PrimaryButton type="submit">Save allowed changes</PrimaryButton>

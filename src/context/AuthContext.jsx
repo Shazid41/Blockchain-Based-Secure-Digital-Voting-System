@@ -4,6 +4,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { getLocalAuthState, getProfile, logout as logoutUser, saveAuthState } from '../services/authService.js';
 import { firebaseAuth, firebaseAuthReady, firebaseDb, isFirebaseConfigured } from '../services/firebaseClient.js';
 import { isSupabaseConfigured, supabase } from '../services/supabaseClient.js';
+import { isTwoFactorSessionVerified } from '../services/twoFactorService.js';
 
 export const AuthContext = createContext(null);
 
@@ -47,6 +48,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [, setTwoFactorTick] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -101,6 +103,8 @@ export function AuthProvider({ children }) {
     }
 
     window.addEventListener('secure-voting-auth-change', loadLocalSession);
+    const updateTwoFactor = () => setTwoFactorTick((value) => value + 1);
+    window.addEventListener('secure-voting-2fa-change', updateTwoFactor);
 
     if (isFirebaseConfigured) {
       const cachedState = getLocalAuthState();
@@ -152,6 +156,7 @@ export function AuthProvider({ children }) {
         active = false;
         clearTimeout(timer);
         window.removeEventListener('secure-voting-auth-change', loadLocalSession);
+        window.removeEventListener('secure-voting-2fa-change', updateTwoFactor);
         unsubscribe();
         unsubscribeProfile();
       };
@@ -161,6 +166,7 @@ export function AuthProvider({ children }) {
       return () => {
         active = false;
         window.removeEventListener('secure-voting-auth-change', loadLocalSession);
+        window.removeEventListener('secure-voting-2fa-change', updateTwoFactor);
       };
     }
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
@@ -183,9 +189,12 @@ export function AuthProvider({ children }) {
     return () => {
       active = false;
       window.removeEventListener('secure-voting-auth-change', loadLocalSession);
+      window.removeEventListener('secure-voting-2fa-change', updateTwoFactor);
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  const twoFactorVerified = !profile?.two_factor_enabled || isTwoFactorSessionVerified(session?.user?.id);
 
   const value = useMemo(
     () => ({
@@ -195,9 +204,10 @@ export function AuthProvider({ children }) {
       loading,
       isAuthenticated: Boolean(session?.user),
       isConfigured: isFirebaseConfigured || isSupabaseConfigured,
+      twoFactorVerified,
       logout: logoutUser,
     }),
-    [loading, profile, session],
+    [loading, profile, session, twoFactorVerified],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

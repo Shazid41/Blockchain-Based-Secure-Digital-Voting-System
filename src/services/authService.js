@@ -11,6 +11,7 @@ import {
 import { firebaseAuth, firebaseAuthReady, isFirebaseConfigured } from './firebaseClient.js';
 import { ensureFirebaseSeed, getFirebaseProfile, upsertFirebaseProfile } from './firebaseStore.js';
 import { isDemoNidApproved } from './nidService.js';
+import { clearTwoFactorVerified } from './twoFactorService.js';
 
 const productionSiteUrl = 'https://shazid41.github.io/Blockchain-Based-Secure-Digital-Voting-System/';
 const ADMIN_EMAIL = 'shazidsaharia21@gmail.com';
@@ -351,6 +352,8 @@ export async function resendSignupVerification(email) {
 }
 
 export async function logout() {
+  const currentUserId = firebaseAuth?.currentUser?.uid ?? getLocalAuthState().session?.user?.id;
+  clearTwoFactorVerified(currentUserId);
   localStorage.removeItem(LOCAL_SESSION_KEY);
   window.dispatchEvent(new Event('secure-voting-auth-change'));
   if (isFirebaseConfigured) {

@@ -24,6 +24,7 @@ import NotFoundPage from '../pages/public/NotFoundPage.jsx';
 import RegisterPage from '../pages/public/RegisterPage.jsx';
 import ResetPasswordPage from '../pages/public/ResetPasswordPage.jsx';
 import SecurityPage from '../pages/public/SecurityPage.jsx';
+import TwoFactorPage from '../pages/public/TwoFactorPage.jsx';
 import UnauthorizedPage from '../pages/public/UnauthorizedPage.jsx';
 import VerifyEmailPage from '../pages/public/VerifyEmailPage.jsx';
 import AvailableElectionsPage from '../pages/voter/AvailableElectionsPage.jsx';
@@ -45,6 +46,7 @@ export default function AppRoutes() {
         <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
+        <Route path="two-factor" element={<ProtectedRoute><TwoFactorPage /></ProtectedRoute>} />
         <Route path="unauthorized" element={<UnauthorizedPage />} />
         <Route path="verify" element={<VoteVerificationPage />} />
         <Route path="home" element={<HomePage />} />
