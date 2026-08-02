@@ -1,7 +1,8 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { getLocalAuthState, getProfile, logout as logoutUser, saveAuthState } from '../services/authService.js';
-import { firebaseAuth, firebaseAuthReady, isFirebaseConfigured } from '../services/firebaseClient.js';
+import { firebaseAuth, firebaseAuthReady, firebaseDb, isFirebaseConfigured } from '../services/firebaseClient.js';
 import { isSupabaseConfigured, supabase } from '../services/supabaseClient.js';
 
 export const AuthContext = createContext(null);
@@ -28,6 +29,17 @@ function firebaseSession(user) {
       app_metadata: { provider: 'firebase' },
       user_metadata: {},
     },
+  };
+}
+
+function firebaseProfileSnapshot(snapshot) {
+  if (!snapshot.exists()) return null;
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    ...data,
+    created_at: data.created_at?.toDate?.().toISOString?.() ?? data.created_at,
+    updated_at: data.updated_at?.toDate?.().toISOString?.() ?? data.updated_at,
   };
 }
 
@@ -107,23 +119,33 @@ export function AuthProvider({ children }) {
       }, 7000);
 
       let unsubscribe = () => {};
+      let unsubscribeProfile = () => {};
       firebaseAuthReady.finally(() => {
         if (!active) return;
         unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
-        if (!active) return;
-        clearTimeout(timer);
-        const nextSession = firebaseSession(user);
+          if (!active) return;
+          clearTimeout(timer);
+          unsubscribeProfile();
+          const nextSession = firebaseSession(user);
           const latestCachedState = getLocalAuthState();
           setSession(nextSession ?? latestCachedState.session ?? null);
-        try {
+          try {
             const nextProfile = user?.uid ? await withTimeout(getProfile(user.uid), 7000) : null;
             setProfile(nextProfile ?? latestCachedState.profile ?? null);
             if (nextSession && nextProfile) saveAuthState(nextSession, nextProfile);
-        } catch {
+            if (user?.uid && firebaseDb) {
+              unsubscribeProfile = onSnapshot(doc(firebaseDb, 'profiles', user.uid), (snapshot) => {
+                if (!active) return;
+                const liveProfile = firebaseProfileSnapshot(snapshot);
+                setProfile(liveProfile ?? latestCachedState.profile ?? null);
+                if (nextSession && liveProfile) saveAuthState(nextSession, liveProfile);
+              }, () => {});
+            }
+          } catch {
             setProfile(latestCachedState.profile ?? null);
-        }
-        setLoading(false);
-      });
+          }
+          setLoading(false);
+        });
       });
 
       return () => {
@@ -131,6 +153,7 @@ export function AuthProvider({ children }) {
         clearTimeout(timer);
         window.removeEventListener('secure-voting-auth-change', loadLocalSession);
         unsubscribe();
+        unsubscribeProfile();
       };
     }
 

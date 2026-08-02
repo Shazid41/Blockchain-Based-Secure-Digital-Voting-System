@@ -37,6 +37,7 @@ function fromDoc(snapshot) {
     start_time: data.start_time?.toDate?.().toISOString?.() ?? data.start_time,
     end_time: data.end_time?.toDate?.().toISOString?.() ?? data.end_time,
     cast_at: data.cast_at?.toDate?.().toISOString?.() ?? data.cast_at,
+    voted_at: data.voted_at?.toDate?.().toISOString?.() ?? data.voted_at,
   };
 }
 
@@ -219,6 +220,13 @@ export async function listFirebaseElections() {
   return elections.map((election) => ({ ...election, regions: regions.find((region) => region.id === election.region_id) ?? null }));
 }
 
+export async function getFirebaseElection(id) {
+  const election = fromDoc(await getDoc(doc(firebaseDb, 'elections', id)));
+  if (!election) return null;
+  const region = election.region_id ? await getFirebaseRegion(election.region_id) : null;
+  return { ...election, regions: region };
+}
+
 export async function saveFirebaseElection(election) {
   requireFirebase();
   const id = election.id || crypto.randomUUID();
@@ -302,7 +310,7 @@ export async function castFirebaseVote({ voterId, electionId, candidateId }) {
       if (!election || election.status !== 'active') throw new Error('Election is not active.');
       if (!candidate || candidate.election_id !== electionId || candidate.is_active === false) throw new Error('Candidate is not valid.');
       transaction.set(ballotRef, { id: ballotRef.id, election_id: electionId, candidate_id: candidateId, anonymous_voter_hash: anonymousVoterHash, receipt_hash: receiptHash, cast_at: serverTimestamp() });
-      transaction.set(blockRef, { id: blockRef.id, ballot_id: ballotRef.id, election_id: electionId, candidate_id: candidateId, block_index: Date.now(), previous_hash: '0'.repeat(64), current_hash: receiptHash, anonymous_voter_hash: anonymousVoterHash, created_at: serverTimestamp() });
+      transaction.set(blockRef, { id: blockRef.id, ballot_id: ballotRef.id, election_id: electionId, candidate_id: candidateId, block_index: Date.now(), previous_hash: '0'.repeat(64), current_hash: receiptHash, receipt_hash: receiptHash, anonymous_voter_hash: anonymousVoterHash, created_at: serverTimestamp() });
     });
   } catch (error) {
     const message = String(error?.message || '').toLowerCase();
@@ -320,6 +328,65 @@ export async function castFirebaseVote({ voterId, electionId, candidateId }) {
     block_index: Date.now(),
     current_block_hash: receiptHash,
   };
+}
+
+export async function verifyFirebaseVoteReceipt(receiptHash) {
+  requireFirebase();
+  const normalizedHash = String(receiptHash ?? '').trim();
+  if (!normalizedHash) {
+    return { receipt_found: false, inclusion_status: 'not_found', chain_status: 'not_checked', verification_time: new Date().toISOString() };
+  }
+
+  const blocks = await listFirebaseVoteBlocks();
+  const block = blocks.find((row) => row.current_hash === normalizedHash || row.receipt_hash === normalizedHash);
+  if (!block) {
+    return { receipt_found: false, inclusion_status: 'not_found', chain_status: 'not_checked', verification_time: new Date().toISOString() };
+  }
+
+  const [election, candidates] = await Promise.all([
+    getFirebaseElection(block.election_id),
+    listFirebaseCandidates({ electionId: block.election_id }),
+  ]);
+  const candidateExists = candidates.some((candidate) => candidate.id === block.candidate_id);
+
+  return {
+    receipt_found: true,
+    receipt_hash: normalizedHash,
+    election_id: block.election_id,
+    election_name: election?.title ?? 'Election',
+    block_index: block.block_index,
+    current_block_hash: block.current_hash ?? normalizedHash,
+    cast_at: block.created_at,
+    inclusion_status: 'included',
+    chain_status: candidateExists ? 'valid_live_chain' : 'included_candidate_removed',
+    verification_time: new Date().toISOString(),
+  };
+}
+
+export async function listFirebaseReceiptsForVoter(voterId) {
+  requireFirebase();
+  if (!voterId) return [];
+  const [elections, blocks] = await Promise.all([listFirebaseElections(), listFirebaseVoteBlocks()]);
+  const hashes = new Map(await Promise.all(elections.map(async (election) => [
+    await sha256Hex(`${voterId}:${election.id}:secure-voting`),
+    election,
+  ])));
+
+  return blocks
+    .filter((block) => hashes.has(block.anonymous_voter_hash))
+    .map((block) => {
+      const election = hashes.get(block.anonymous_voter_hash);
+      return {
+        election_id: block.election_id,
+        election_title: election?.title ?? 'Election',
+        cast_at: block.created_at ?? block.cast_at,
+        receipt_hash: block.receipt_hash ?? block.current_hash,
+        block_index: block.block_index,
+        current_block_hash: block.current_hash ?? block.receipt_hash,
+        chain_status: 'valid_live_chain',
+      };
+    })
+    .sort((a, b) => new Date(b.cast_at).getTime() - new Date(a.cast_at).getTime());
 }
 
 export async function listFirebasePublicDashboard() {

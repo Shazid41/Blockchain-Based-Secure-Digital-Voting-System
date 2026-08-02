@@ -4,6 +4,7 @@ const badgeStyles = {
   approved: 'bg-primary-light text-primary-dark',
   active: 'bg-primary-light text-primary-dark',
   verified: 'bg-primary-light text-primary-dark',
+  included: 'bg-primary-light text-primary-dark',
   pending: 'bg-blue-50 text-info',
   suspended: 'bg-red-50 text-error',
   rejected: 'bg-red-50 text-error',

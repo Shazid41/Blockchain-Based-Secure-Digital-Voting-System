@@ -5,6 +5,7 @@ import PageHeader from '../../components/common/PageHeader.jsx';
 import PrimaryButton from '../../components/common/PrimaryButton.jsx';
 import SecondaryButton from '../../components/common/SecondaryButton.jsx';
 import { demoReceipt } from '../../services/demoData.js';
+import { downloadVoteReceipt } from '../../utils/receiptDownload.js';
 
 export default function VoteSuccessPage() {
   const { state } = useLocation();
@@ -15,25 +16,6 @@ export default function VoteSuccessPage() {
     block_index: demoReceipt.blockIndex,
     current_block_hash: demoReceipt.currentBlockHash,
   };
-
-  function downloadReceipt() {
-    const lines = [
-      'Secure Digital Voting System - Vote Receipt',
-      `Election: ${receipt.election_title}`,
-      `Cast at: ${receipt.cast_at}`,
-      `Receipt hash: ${receipt.receipt_hash}`,
-      `Block index: ${receipt.block_index}`,
-      `Current block hash: ${receipt.current_block_hash}`,
-      'No voter identity or public candidate selection is included in this receipt.',
-    ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'vote-receipt.txt';
-    link.click();
-    URL.revokeObjectURL(url);
-  }
 
   return (
     <>
@@ -52,7 +34,7 @@ export default function VoteSuccessPage() {
           </dl>
           <div className="flex flex-col gap-3 sm:flex-row">
             <PrimaryButton><Link to={`/voter/verify?receipt=${encodeURIComponent(receipt.receipt_hash)}`}>Verify Vote</Link></PrimaryButton>
-            <SecondaryButton onClick={downloadReceipt}><Download size={18} /> Download Receipt</SecondaryButton>
+            <SecondaryButton onClick={() => downloadVoteReceipt(receipt)}><Download size={18} /> Download Receipt</SecondaryButton>
           </div>
         </div>
       </section>
