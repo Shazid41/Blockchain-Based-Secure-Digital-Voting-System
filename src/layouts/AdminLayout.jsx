@@ -44,9 +44,9 @@ export default function AdminLayout() {
     'focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-primary/15 bg-white/75 px-3 py-2 text-sm font-extrabold text-primary shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-primary-light hover:shadow-soft';
 
   const sidebar = (
-    <aside className="h-full overflow-y-auto border-r border-white/70 bg-white/82 p-4 shadow-crisp backdrop-blur-xl">
-      <div className="mb-6 flex items-center gap-2 font-extrabold text-primary"><ShieldCheck /> Admin Portal</div>
-      <nav className="space-y-1">{adminLinks.map(([label, to]) => <NavLink key={to} to={to} end={to === '/admin'} className={navClass}>{label}</NavLink>)}</nav>
+    <aside className="h-full overflow-y-auto border-r border-white/70 bg-white/82 p-3 shadow-crisp backdrop-blur-xl sm:p-4">
+      <div className="mb-4 flex items-center gap-2 font-extrabold text-primary sm:mb-6"><ShieldCheck /> Admin Portal</div>
+      <nav className="grid gap-1 sm:block sm:space-y-1">{adminLinks.map(([label, to]) => <NavLink key={to} to={to} end={to === '/admin'} className={navClass} onClick={() => setOpen(false)}>{label}</NavLink>)}</nav>
       <div className="my-5 h-px bg-border" />
       <p className="px-3 text-xs font-extrabold uppercase text-muted">Website View</p>
       <nav className="mt-2 space-y-1">
@@ -56,6 +56,9 @@ export default function AdminLayout() {
           </NavLink>
         ))}
       </nav>
+      <button className="focus-ring mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-extrabold text-error" onClick={handleLogout}>
+        <LogOut size={16} aria-hidden="true" /> Logout
+      </button>
     </aside>
   );
 
@@ -64,10 +67,10 @@ export default function AdminLayout() {
       <div className="hidden lg:block">{sidebar}</div>
       <div>
         <header className="sticky top-0 z-30 border-b border-white/70 bg-white/82 shadow-sm backdrop-blur-xl">
-          <div className="flex min-h-16 items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex min-h-14 items-center justify-between gap-3 px-3 py-2 sm:min-h-16 sm:px-6 sm:py-3 lg:px-8">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Admin / {current}</p>
-              <h1 className="text-xl font-bold text-text">{current}</h1>
+              <h1 className="text-lg font-bold text-text sm:text-xl">{current}</h1>
             </div>
             <div className="hidden items-center gap-2 lg:flex">
               <button type="button" className={actionClass} onClick={() => navigate(-1)}>
@@ -93,7 +96,7 @@ export default function AdminLayout() {
           </div>
           {open ? (
             <div className="border-t border-border bg-white/95 lg:hidden">
-              <div className="grid gap-2 p-4 sm:grid-cols-2">
+              <div className="grid gap-2 p-3 sm:grid-cols-2 sm:p-4">
                 <button type="button" className={actionClass} onClick={() => { setOpen(false); navigate(-1); }}>
                   <ArrowLeft size={16} aria-hidden="true" /> Back
                 </button>

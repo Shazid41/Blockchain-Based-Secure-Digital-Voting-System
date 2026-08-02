@@ -276,3 +276,41 @@ a {
 .interactive-row {
   @apply transition duration-200 hover:bg-primary-light/55;
 }
+
+@media (max-width: 640px) {
+  body::before,
+  body::after {
+    width: 16rem;
+    height: 16rem;
+    opacity: 0.16;
+    filter: blur(8px);
+  }
+
+  .container-page {
+    @apply px-3;
+  }
+
+  .card,
+  .glass-panel {
+    animation-duration: 0.32s;
+  }
+
+  .card {
+    @apply rounded-lg shadow-sm;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+
+  .animated-grid {
+    background-size: 32px 32px, 32px 32px, 100% 100%;
+    animation-duration: 36s;
+  }
+
+  .hero-stage::before,
+  .hero-stage::after {
+    opacity: 0.36;
+    height: 7rem;
+  }
+}

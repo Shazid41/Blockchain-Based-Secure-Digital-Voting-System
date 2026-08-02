@@ -1,6 +1,6 @@
-import { LayoutDashboard, Menu, ShieldCheck, UserRoundCheck, X } from 'lucide-react';
+import { LayoutDashboard, LogOut, Menu, ShieldCheck, UserRoundCheck, X } from 'lucide-react';
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth.js';
 import useLanguage from '../../hooks/useLanguage.js';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
@@ -16,12 +16,19 @@ const navItems = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const { isAuthenticated, profile } = useAuth();
+  const navigate = useNavigate();
+  const { isAuthenticated, profile, logout } = useAuth();
   const { t } = useLanguage();
   const isAdmin = profile?.role === 'admin';
   const portalPath = isAdmin ? '/admin' : '/voter';
   const portalLabel = isAdmin ? 'Admin Portal' : 'Voter Portal';
   const PortalIcon = isAdmin ? LayoutDashboard : UserRoundCheck;
+
+  async function handleLogout() {
+    await logout();
+    setOpen(false);
+    navigate('/login');
+  }
 
   const linkClass = ({ isActive }) =>
     `focus-ring nav-pill whitespace-nowrap ${
@@ -30,13 +37,13 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/70 bg-white/86 shadow-crisp backdrop-blur-xl">
-      <nav className="mx-auto flex min-h-[88px] w-full max-w-7xl items-center justify-between gap-5 px-4 py-3 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex min-h-[72px] w-full max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:min-h-[88px] sm:px-6 sm:py-3 lg:px-8">
         <Link to="/" className="focus-ring group flex min-w-0 items-center gap-3 rounded-lg pr-1">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-[#087a59] to-[#16834A] text-white shadow-glow transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-xl">
-            <ShieldCheck size={24} aria-hidden="true" />
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-[#087a59] to-[#16834A] text-white shadow-glow transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-xl sm:h-14 sm:w-14">
+            <ShieldCheck size={22} aria-hidden="true" />
           </span>
           <span className="min-w-0">
-            <span className="block max-w-[15rem] truncate text-lg font-extrabold leading-6 text-primary sm:max-w-[18rem] sm:text-xl">{t('siteName')}</span>
+            <span className="block max-w-[12.5rem] truncate text-base font-extrabold leading-5 text-primary sm:max-w-[18rem] sm:text-xl sm:leading-6">{t('siteName')}</span>
             <span className="hidden max-w-[17rem] text-sm font-semibold leading-5 text-muted sm:block">{t('siteSubtitle')}</span>
           </span>
         </Link>
@@ -84,8 +91,8 @@ export default function Navbar() {
 
       {open ? (
         <div className="border-t border-white/70 bg-white/90 backdrop-blur lg:hidden">
-          <div className="container-page flex flex-col gap-2 py-4">
-            <div className="mb-2">
+          <div className="container-page flex max-h-[calc(100vh-76px)] flex-col gap-1 overflow-y-auto py-3">
+            <div className="mb-1">
               <LanguageSwitcher />
             </div>
             {navItems.map((item) => (
@@ -101,6 +108,9 @@ export default function Navbar() {
                 <Link className="focus-ring rounded border border-primary px-4 py-3 text-center font-semibold text-primary" to={isAdmin ? '/voter' : '/verify'} onClick={() => setOpen(false)}>
                   {isAdmin ? 'Voter View' : 'Public Verify'}
                 </Link>
+                <button className="focus-ring inline-flex items-center justify-center gap-2 rounded border border-red-200 bg-red-50 px-4 py-3 font-semibold text-error" onClick={handleLogout}>
+                  <LogOut size={18} aria-hidden="true" /> Logout
+                </button>
               </>
             ) : (
               <>

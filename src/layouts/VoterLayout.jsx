@@ -31,8 +31,8 @@ export default function VoterLayout() {
   return (
     <div className="page-shell min-h-screen bg-page">
       <header className="sticky top-0 z-30 border-b border-white/70 bg-white/82 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <Link to="/voter" className="flex items-center gap-2 font-extrabold text-primary">
+        <div className="mx-auto flex min-h-14 w-full max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:min-h-16 sm:px-6 sm:py-3 lg:px-8">
+          <Link to="/voter" className="flex min-w-0 items-center gap-2 font-extrabold text-primary">
             <Vote aria-hidden="true" /> Voter Portal
           </Link>
           <nav className="hidden items-center gap-2 lg:flex">
@@ -52,13 +52,20 @@ export default function VoterLayout() {
               <LogOut size={18} />
             </button>
           </div>
-          <button className="focus-ring rounded p-2 text-primary lg:hidden" onClick={() => setOpen((value) => !value)} aria-label="Open voter navigation">
+          <div className="flex min-w-0 items-center gap-2 lg:hidden">
+            <StatusBadge status={currentProfile.approval_status ?? 'pending'} />
+            <button className="focus-ring rounded p-2 text-primary" onClick={() => setOpen((value) => !value)} aria-label="Open voter navigation">
             {open ? <X /> : <Menu />}
-          </button>
+            </button>
+          </div>
         </div>
         {open ? (
           <div className="border-t border-border bg-white lg:hidden">
-            <div className="container-page flex flex-col gap-2 py-4">
+            <div className="container-page flex max-h-[calc(100vh-64px)] flex-col gap-1 overflow-y-auto py-3">
+              <div className="mb-2 rounded-xl border border-primary/15 bg-primary-light/70 p-3">
+                <p className="truncate text-sm font-extrabold text-text">{currentProfile.full_name || user?.email}</p>
+                <p className="truncate text-xs font-semibold text-muted">{user?.email}</p>
+              </div>
               {voterLinks.map(([label, to]) => <NavLink key={to} to={to} end={to === '/voter'} className={navClass} onClick={() => setOpen(false)}>{label}</NavLink>)}
               <div className="my-2 h-px bg-border" />
               <p className="px-3 text-xs font-extrabold uppercase text-muted">Website Pages</p>
@@ -66,12 +73,33 @@ export default function VoterLayout() {
               <NavLink to="/how-it-works" className={navClass} onClick={() => setOpen(false)}>How It Works</NavLink>
               <NavLink to="/security" className={navClass} onClick={() => setOpen(false)}><ShieldCheck size={16} aria-hidden="true" /> Security</NavLink>
               <NavLink to="/about" className={navClass} onClick={() => setOpen(false)}>Help</NavLink>
-              <button className="focus-ring rounded px-3 py-2 text-left text-sm font-semibold text-muted" onClick={handleLogout}>Logout</button>
+              <button className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-extrabold text-error" onClick={handleLogout}><LogOut size={16} /> Logout</button>
             </div>
           </div>
         ) : null}
       </header>
-      <Outlet />
+      <main className="pb-20 lg:pb-0">
+        <Outlet />
+      </main>
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/80 bg-white/90 px-2 py-2 shadow-[0_-16px_40px_rgba(16,32,51,0.12)] backdrop-blur-xl lg:hidden">
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+          {[
+            { label: 'Home', to: '/voter', icon: Vote },
+            { label: 'Profile', to: '/voter/profile', icon: UserCircle },
+            { label: 'Vote', to: '/voter/elections', icon: ShieldCheck },
+            { label: 'Verify', to: '/voter/verify', icon: Home },
+          ].map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.to === '/voter'} className={({ isActive }) => `focus-ring flex min-h-12 flex-col items-center justify-center rounded-lg text-[11px] font-extrabold ${isActive ? 'bg-primary text-white shadow-soft' : 'text-muted'}`}>
+              <item.icon size={17} aria-hidden="true" />
+              {item.label}
+            </NavLink>
+          ))}
+          <button className="focus-ring flex min-h-12 flex-col items-center justify-center rounded-lg text-[11px] font-extrabold text-error" onClick={handleLogout}>
+            <LogOut size={17} aria-hidden="true" />
+            Logout
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
